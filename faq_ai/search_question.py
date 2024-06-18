@@ -3,7 +3,7 @@ import spacy
 # spaCyの英語モデルをロード
 nlp = spacy.load("ja_core_news_md")
 
-def find_most_similar_sentence(sentences, target_sentence):
+def find_most_similar_sentence(sentences, target_sentence): #sentences=list, target_sentence=str
     # ターゲットの文章をspaCyのドキュメントオブジェクトに変換
     target_doc = nlp(target_sentence)
     
@@ -24,21 +24,5 @@ def find_most_similar_sentence(sentences, target_sentence):
             highest_similarity = similarity
             most_similar_sentence = sentence
     
+    #most_similar_sentence=最も似ている文章 highest_similarity=似ている度合
     return most_similar_sentence, highest_similarity
-
-# 文章群
-sentences = [
-    "ブラゴヴェとはどういうところだったのですか。",
-    "部隊内ではどのような仕事をしていましたか。",
-    "帰ってきて初めて日本を見たときはどのように感じましたか",
-]
-
-# 指定した文章
-target_sentence = "ブラゴヴェはどんな場所ですか。"
-
-# 最も類似度が高い文章とその類似度を求める
-most_similar, similarity = find_most_similar_sentence(sentences, target_sentence)
-
-print("指定した文章:", target_sentence)
-print("最も類似度が高い文章:", most_similar)
-print("類似度:", similarity)
