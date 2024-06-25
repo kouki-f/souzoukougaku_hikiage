@@ -3,7 +3,7 @@ import nltk
 #nltk.download('stopwords')
 from Questgen import main
 
-from import_data import ImportData
+from faq_ai.excel_io import ImportData
 
 data = ImportData()
 qg = main.QGen()
