@@ -1,0 +1,5 @@
+
+voice_tts/checkpoints/vallex-checkpoint.pt
+voice_tts_sbv2/model_assets/jvnv-F1-jp/config.json
+voice_tts_sbv2/model_assets/jvnv-F1-jp/jvnv-F1-jp_e160_s14000.safetensors
+voice_tts_sbv2/model_assets/jvnv-F1-jp/style_vectors.npy
