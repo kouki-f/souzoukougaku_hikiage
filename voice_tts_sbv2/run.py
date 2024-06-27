@@ -5,6 +5,7 @@ import soundfile as sf
 from playsound import playsound
 
 def main(output_text):
+    #読み込み済のBERTモデルを取得
     bert_models.load_model("JP", "ku-nlp/deberta-v2-large-japanese-char-wwm")
     bert_models.load_tokenizer("JP", "ku-nlp/deberta-v2-large-japanese-char-wwm")
     assets_root = Path("model_assets")
@@ -15,15 +16,14 @@ def main(output_text):
     config_file = "jvnv-F1-jp/config.json"
     style_file = "jvnv-F1-jp/style_vectors.npy"
 
+    #音声合成
     model = TTSModel(
         model_path=assets_root / model_file,
         config_path=assets_root / config_file,
         style_vec_path=assets_root / style_file,
         device="cpu",
     )
-
     sr, audio = model.infer(text=output_text)
-    #Audio(audio, rate=sr)
     sf.write(file="playback.wav", data=audio, samplerate=sr)
     playsound("playback.wav")
 
