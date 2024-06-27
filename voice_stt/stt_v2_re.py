@@ -1,6 +1,7 @@
 import os
 import speech_recognition as sr
 from datetime import datetime
+#クラス化してあるけど今思えば必要なかった気がする
 
 class SpeechRecognizer():
     def __init__(self):
