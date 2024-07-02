@@ -1,7 +1,6 @@
 import os
 import speech_recognition as sr
 from datetime import datetime
-#クラス化してあるけど今思えば必要なかった気がする
 
 class SpeechRecognizer():
     def __init__(self):
@@ -39,7 +38,7 @@ class SpeechRecognizer():
 
         return speech
 
-    def run_once(self):
+    def run(self):
         #マイクで受け取った音声を認識してテキストに出力
         while True:
             audio = self.grab_audio()
@@ -54,14 +53,15 @@ class SpeechRecognizer():
                 break
 
             print(speech)
-
+        """
         with open(self.path, mode='w', encoding="utf-8") as out:
             out.write(datetime.now().strftime('%Y%m%d_%H:%M:%S') + "\n\n")
             out.write("\n".join(self.speech) + "\n")
+        """
 
         return speech
 
 if __name__ == '__main__':
     my = SpeechRecognizer()
-    text = my.run_once()
+    text = my.run()
     print(text)
