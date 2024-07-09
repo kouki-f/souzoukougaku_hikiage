@@ -4,10 +4,12 @@
 導入時に以下のコマンドで各種ライブラリを導入する。
 - pip install style-bert-vits2  
 - pip install soundfile  
-- pip install playsound  
+- pip install playsound==1.2.2  
+※ver1.2.2で指定しないとpythonのverとの互換性の問題でpip installが出来ない  
+※「style-bert-vits2」の導入に失敗する場合、「--ignore-installed」の引数をつけることで解決できるかも？  
 
-また、PyTorchを導入するときは、実行環境によってコマンドが異なる。
-そのため、以下URLを参照し、自身の環境にあったものを選択して「Run this Command」をコピーし、ターミナル上でペーストする。
+また、PyTorchを導入するときは、実行環境によってコマンドが異なる。  
+そのため、以下URLを参照し、自身の環境にあったものを選択して「Run this Command」をコピーし、ターミナル上でペーストする。  
 - https://pytorch.org/get-started/locally/  
   
 **必要ファイルのダウンロード**  
