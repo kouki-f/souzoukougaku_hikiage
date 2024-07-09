@@ -1,4 +1,5 @@
 def main(output_text):
+
     from style_bert_vits2.nlp import bert_models
     from style_bert_vits2.tts_model import TTSModel
     from pathlib import Path
@@ -8,7 +9,6 @@ def main(output_text):
     #読み込み済のBERTモデルを取得
     bert_models.load_model("JP", "ku-nlp/deberta-v2-large-japanese-char-wwm")
     bert_models.load_tokenizer("JP", "ku-nlp/deberta-v2-large-japanese-char-wwm")
-    assets_root = Path("model_assets")
 
     #モデルを指定。ここではデフォルトモデルを指定している。
     #モデル学習が出来次第、差し替え予定
@@ -20,6 +20,7 @@ def main(output_text):
     model_file = "yasuda/yasuda_e100_s3462.safetensors"
     config_file = "yasuda/config.json"
     style_file = "yasuda/style_vectors.npy"
+    assets_root = Path("model_assets")
 
     #音声合成
     model = TTSModel(
