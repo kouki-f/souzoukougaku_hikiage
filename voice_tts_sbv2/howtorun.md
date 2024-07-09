@@ -1,13 +1,13 @@
 # 安田さんのTTSモデルの利用方法
 
 **導入**  
-導入時に以下のコマンドで各種ライブラリを導入する。  
+導入時に以下のコマンドで各種ライブラリを導入する。
 - pip install style-bert-vits2  
 - pip install soundfile  
 - pip install playsound  
 
 また、PyTorchを導入するときは、実行環境によってコマンドが異なる。
-そのため、以下URLを参照し、自身の環境にあったものを選択して「Run this Command」をコピーし、ターミナル上でペーストする。  
+そのため、以下URLを参照し、自身の環境にあったものを選択して「Run this Command」をコピーし、ターミナル上でペーストする。
 - https://pytorch.org/get-started/locally/  
   
 **必要ファイルのダウンロード**  
