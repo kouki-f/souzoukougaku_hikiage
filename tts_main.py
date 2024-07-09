@@ -1,14 +1,14 @@
+from style_bert_vits2.nlp.bert_models import load_model
+from style_bert_vits2.nlp.bert_models import load_tokenizer
+from style_bert_vits2.tts_model import TTSModel
+from pathlib import Path
+from soundfile import write
+from playsound import playsound
+
 def main(output_text):
-
-    from style_bert_vits2.nlp import bert_models
-    from style_bert_vits2.tts_model import TTSModel
-    from pathlib import Path
-    import soundfile as sf
-    from playsound import playsound
-
     #読み込み済のBERTモデルを取得
-    bert_models.load_model("JP", "ku-nlp/deberta-v2-large-japanese-char-wwm")
-    bert_models.load_tokenizer("JP", "ku-nlp/deberta-v2-large-japanese-char-wwm")
+    load_model("JP", "ku-nlp/deberta-v2-large-japanese-char-wwm")
+    load_tokenizer("JP", "ku-nlp/deberta-v2-large-japanese-char-wwm")
 
     #モデルを指定。ここではデフォルトモデルを指定している。
     #モデル学習が出来次第、差し替え予定
@@ -32,8 +32,9 @@ def main(output_text):
 
     #生成した音声の保存、再生
     sr, audio = model.infer(text=output_text)
-    sf.write(file="playback.wav", data=audio, samplerate=sr)
-    playsound("playback.wav")
+    write(file="playback.wav", data=audio, samplerate=sr)
+    #playsound("playback.wav")
 
 if __name__ == '__main__':
-    main()
+    text = "そういうひどい収容所に放り込まれてそれからは次から次とであっちこっち引っ張り回されて農場へ行ったりそれから工場、農場関係の仕事に連れていかれたりね"
+    main(text)
