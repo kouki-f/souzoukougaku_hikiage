@@ -11,7 +11,7 @@
 - https://pytorch.org/get-started/locally/  
   
 **必要ファイルのダウンロード**  
-「model_assets」ディレクトリ上に  
+「model_assets/yasuda」ディレクトリ上に  
 - config.json  
 - style_vectors.npy  
 があることを確認する。  
