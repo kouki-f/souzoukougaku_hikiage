@@ -6,4 +6,4 @@ voice_tts_sbv2/model_assets/jvnv-F1-jp/style_vectors.npy
 voice_tts_VALL-EX/checkpoints/vallex-checkpoint.pt
 *.wav
 /voice_tts_VALL-EX
-voice_tts_sbv2/model_assets/yasuda/yasuda_e100_s3428.safetensors
+voice_tts_sbv2/model_assets/yasuda/yasuda_e100_s3462.safetensors

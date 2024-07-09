@@ -16,7 +16,8 @@ def main(output_text):
     #config_file = "jvnv-F1-jp/config.json"
     #style_file = "jvnv-F1-jp/style_vectors.npy"
 
-    model_file = "yasuda/yasuda_e100_s3428.safetensors"
+    #安田さんの音声合成モデルに差し替え
+    model_file = "yasuda/yasuda_e100_s3462.safetensors"
     config_file = "yasuda/config.json"
     style_file = "yasuda/style_vectors.npy"
 
@@ -27,6 +28,8 @@ def main(output_text):
         style_vec_path=assets_root / style_file,
         device="cpu",
     )
+
+    #生成した音声の保存、再生
     sr, audio = model.infer(text=output_text)
     sf.write(file="playback.wav", data=audio, samplerate=sr)
     playsound("playback.wav")
