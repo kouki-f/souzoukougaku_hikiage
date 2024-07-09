@@ -5,9 +5,11 @@
 - pip install style-bert-vits2  
 - pip install soundfile  
 - pip install playsound  
-また、以下URLを参照し、自身の環境にあったものを選択して「Run this Command」をコピーし、ターミナル上でペーストする。  
-- https://pytorch.org/get-started/locally/  
 
+また、PyTorchを導入するときは、実行環境によってコマンドが異なる。
+そのため、以下URLを参照し、自身の環境にあったものを選択して「Run this Command」をコピーし、ターミナル上でペーストする。  
+- https://pytorch.org/get-started/locally/  
+  
 **必要ファイルのダウンロード**  
 「model_assets」ディレクトリ上に  
 - config.json  
@@ -18,7 +20,7 @@
 
 その後、tts_main.pyをimportして、main関数に読み上げさせたい文章を与えることで、実行が出来る。  
 「run.py」にサンプルコードを記述する。  
-
+  
 **注意点**  
 - tts_main.py 29行目のdevice変数に与えるものとして、  
 CPUで処理させる場合は"cpu"  
