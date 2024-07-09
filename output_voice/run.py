@@ -1,4 +1,4 @@
-from tts_main import main
+from output_voice.tts_main import main
 main(
 """
 そういうひどい収容所に放り込まれてそれからは次から次とであっちこっち引っ張り回されて農場へ行ったりそれから工場、農場関係の仕事に連れていかれたりね
