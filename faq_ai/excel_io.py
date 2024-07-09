@@ -15,3 +15,8 @@ class ImportData():
     def save_data(self, data, row, column_name): #エクセルファイルの任意のセルの値を上書き
         self.df.loc[row, column_name] = data
         self.df.to_excel(self.data_path, sheet_name=self.sheet_name, index=False)
+
+    def get_video_time(self, row):
+        start = self.df.at[row, "始まり"]
+        stop = self.df.at[row, "終わり"]
+        return [start, stop]

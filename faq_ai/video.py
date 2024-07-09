@@ -1,7 +1,7 @@
 import cv2
 from ffpyplayer.player import MediaPlayer
 
-def PlayVideoWithSound(video_path, start_time, end_time):
+def PlayVideoWithSound(video_path, start_time, end_time, video_text):
     def get_audio_player(video_path):
         return MediaPlayer(video_path)
 
@@ -32,7 +32,7 @@ def PlayVideoWithSound(video_path, start_time, end_time):
         if not ret:
             break
         
-        add_text(frame, "hello OpenCV")
+        add_text(frame, video_text)
         # フレームを表示
         cv2.imshow('Video', frame)
         
@@ -71,10 +71,3 @@ def add_text(img, text):
 
     # 画像に文字を追加する
     cv2.putText(img, text, position, font, font_scale, color, thickness)
-
-# 使用例
-video_path = 'test.mp4'
-start_time = 10  # 開始時間（秒）
-end_time = 20    # 終了時間（秒）
-
-PlayVideoWithSound(video_path, start_time, end_time)

@@ -34,8 +34,6 @@ class SpeechRecognizer():
         except sr.RequestError as e:
             speech = 2
             self.error = e
-
-
         return speech
 
     def run(self):
