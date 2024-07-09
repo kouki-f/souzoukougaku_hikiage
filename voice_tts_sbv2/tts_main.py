@@ -12,9 +12,13 @@ def main(output_text):
 
     #モデルを指定。ここではデフォルトモデルを指定している。
     #モデル学習が出来次第、差し替え予定
-    model_file = "jvnv-F1-jp/jvnv-F1-jp_e160_s14000.safetensors"
-    config_file = "jvnv-F1-jp/config.json"
-    style_file = "jvnv-F1-jp/style_vectors.npy"
+    #model_file = "jvnv-F1-jp/jvnv-F1-jp_e160_s14000.safetensors"
+    #config_file = "jvnv-F1-jp/config.json"
+    #style_file = "jvnv-F1-jp/style_vectors.npy"
+
+    model_file = "yasuda/yasuda_e100_s3428.safetensors"
+    config_file = "yasuda/config.json"
+    style_file = "yasuda/style_vectors.npy"
 
     #音声合成
     model = TTSModel(
