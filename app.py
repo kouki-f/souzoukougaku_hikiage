@@ -23,7 +23,7 @@ def import_speech(sp):
 speech = SpeechRecognizer()
 while(True):
     inputted_text = import_speech(speech)
-    [ans, video_time] = search_ans(inputted_text)
+    [similarity, ans, video_time] = search_ans(inputted_text)
     print(inputted_text, video_time)
     #PlayVideoWithSound("test.mp4", video_time[0], video_time[1], ans)
 

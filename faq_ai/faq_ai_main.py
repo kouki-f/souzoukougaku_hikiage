@@ -27,4 +27,4 @@ def search_ans(text):
     most_similar_sentence = io.get_data(most_similar_index, "原文")
     video_time = io.get_video_time(most_similar_index)
     print(most_similar_index + 1, highest_similarity, most_similar_sentence)
-    return [most_similar_sentence, video_time]
+    return [highest_similarity, most_similar_sentence, video_time]
