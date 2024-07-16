@@ -9,7 +9,7 @@ class gui():
         self.window = tk.Tk()
         self.speech = SpeechRecognizer()
         self.window.title("引き揚げ証言データベース")
-        self.window.geometry("1400x1300")
+        self.window.geometry("700x600")
         # Create a canvas that can fit the video source size
         # self.canvas = tk.Canvas(self.window, width=1080, height=1440)
         # self.canvas.pack()
@@ -51,6 +51,7 @@ class gui():
             [similarity, ans, video_time] = search_ans(self.inputted_text)
             if similarity > 0.9:
                 update_label3(ans)
+                
                 print(self.inputted_text, video_time)
             else:
                 update_label3("検索結果が見つかりませんでした。")
