@@ -40,6 +40,7 @@ class MainWindow(QWidget):
         layout.addWidget(self.label2)
         layout.addWidget(self.label3)
 
+        #ウィジェットの設定(SetLabel1 ~ SetuButton2)
     def SetLabel1(self):
         self.label1 = QLabel('「音声認識」を押してください', self)
         self.label1.setAlignment(Qt.AlignCenter)
@@ -53,19 +54,6 @@ class MainWindow(QWidget):
     def SetLabel3(self):
         self.label3 = QLabel(self)
 
-        """
-        画像表示でのレイアウトテスト
-        self.label3 = QLabel(self)
-        self.label3.setAlignment(Qt.AlignCenter)
-        image = QPixmap(r"image.png")
-
-        width = image.size().width() / 2
-        height = image.size().height() / 2
-        image = image.scaled(width, height)
-
-        self.label3.setPixmap(image)
-        """
-
     def SetButton1(self):
         self.button1 = QPushButton('音声認識', self)
         self.button1.clicked.connect(self.import_speech)
@@ -74,6 +62,7 @@ class MainWindow(QWidget):
         self.button2 = QPushButton('検索', self)
         self.button2.clicked.connect(self.search_database)
 
+        #音声認識の関数
     def import_speech(self, sp):
         self.button1.setText('話してください…')
         self.label1.setText('')
@@ -97,6 +86,7 @@ class MainWindow(QWidget):
         print(speech)
         self.inputted_text = speech
 
+        #データベースを参照
     def search_database(self):
         if self.inputted_text == "None":
             self.label1.setText('質問を入力してください')
@@ -110,28 +100,32 @@ class MainWindow(QWidget):
         if similarity > 0.9:
             self.label2.setText(ans)
             print(self.inputted_text, video_time)
-            #self.measure_video_sound(video_time[0], video_time[1])
+
             self.play_video_sound()
+            fps = self.cap.get(cv2.CAP_PROP_FPS)
+            self.start_frame = int(video_time[0] * fps)
+            self.end_frame = int(video_time[1] * fps)
         else:
             self.label2.setText("検索結果が見つかりませんでした。")
-
         self.button2.setText('検索')
 
+        #動画を再生
     def play_video_sound(self):
         self.timer = QTimer()
         self.timer.timeout.connect(self.nextFrame)
         self.timer.start(1000. / 29.97)  # 30fps
 
     def nextFrame(self):
-        ret, frame = self.cap.read()
-        if ret:
-            # OpenCVの画像データをPySide6で表示できるように変換
-            frame = cv2.resize(frame, None, fx=0.3, fy=0.3)
-            image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            h, w, c = image.shape
-            qimg = QImage(image.data, w, h, w*c, QImage.Format_RGB888)
-            pixmap = QPixmap.fromImage(qimg)
-            self.label3.setPixmap(pixmap)
+        #while self.cap.isOpened() and self.start_frame <= self.end_frame:
+            ret, frame = self.cap.read()
+            if ret:
+                # OpenCVの画像データをPySide6で表示できるように変換
+                frame = cv2.resize(frame, None, fx=0.3, fy=0.3)
+                image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                h, w, c = image.shape
+                qimg = QImage(image.data, w, h, w*c, QImage.Format_RGB888)
+                pixmap = QPixmap.fromImage(qimg)
+                self.label3.setPixmap(pixmap)
 
 if __name__ == "__main__":
     app = QApplication([])

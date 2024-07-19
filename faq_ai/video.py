@@ -9,26 +9,26 @@ def PlayVideoWithSound(video_path, start_time, end_time, video_text):
     cap = cv2.VideoCapture(video_path)
     width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
     height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
-    
+
     # 音声プレイヤーを作成
     player = get_audio_player(video_path)
-    
+
     # 動画のフレームレートを取得
     fps = cap.get(cv2.CAP_PROP_FPS)
-    
+
     # 開始位置と終了位置のフレーム数を計算
     start_frame = int(start_time * fps)
     end_frame = int(end_time * fps)
-    
+
     # 開始位置にシーク
     cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
-    
+
     # 音声の開始位置にシーク
     player.seek(start_time, relative=False)
-    
+
     # 現在のフレーム位置を取得
     current_frame = start_frame
-    
+
     while cap.isOpened() and current_frame <= end_frame:
         ret, frame = cap.read()
         frame_resized = cv2.resize(frame, (int(int(width)/2), int(int(height)/2)))
@@ -38,19 +38,19 @@ def PlayVideoWithSound(video_path, start_time, end_time, video_text):
         add_text(frame, video_text)
         # フレームを表示
         cv2.imshow('Video', frame_resized)
-        
+
         # 音声を再生
         audio_frame, val = player.get_frame()
         if val != 'eof' and audio_frame is not None:
             img, t = audio_frame
-        
+
         # フレームを進める
         current_frame += 1
-        
+
         # qキーが押されたら終了
         if cv2.waitKey(int(1000 / fps)) & 0xFF == ord('q'):
             break
-    
+
     # キャプチャを解放してウィンドウを閉じる
     cap.release()
     cv2.destroyAllWindows()
