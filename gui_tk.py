@@ -17,7 +17,6 @@ class gui():
         # Update the image in the canvas
         #self.update()
         self.window.mainloop()
-        
 
     def import_speech(self, sp):
         #マイクで受け取った音声を認識してテキストに出力
