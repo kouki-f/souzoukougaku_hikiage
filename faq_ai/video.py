@@ -18,7 +18,6 @@ def PlayVideoWithSound(video_path, start_time, end_time, video_text):
     
     # 開始位置と終了位置のフレーム数を計算
     start_frame = int(start_time * fps)
-    print(start_frame)
     end_frame = int(end_time * fps)
     
     # 開始位置にシーク
