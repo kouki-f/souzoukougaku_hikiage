@@ -34,12 +34,12 @@ class gui():
 
             print(speech)
         return speech
-    
+
     def layer(self):
         def on_button_click():
             self.inputted_text = self.import_speech(self.speech)
             update_label(self.inputted_text)
-            
+
         def update_label(text):
             label2.config(text=text)
 
@@ -50,7 +50,7 @@ class gui():
             [similarity, ans, video_time] = search_ans(self.inputted_text)
             if similarity > 0.9:
                 update_label3(ans)
-                
+
                 print(self.inputted_text, video_time)
             else:
                 update_label3("検索結果が見つかりませんでした。")

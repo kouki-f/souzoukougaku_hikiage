@@ -7,6 +7,8 @@ def PlayVideoWithSound(video_path, start_time, end_time, video_text):
 
     # 動画を読み込み
     cap = cv2.VideoCapture(video_path)
+    width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+    height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
     
     # 音声プレイヤーを作成
     player = get_audio_player(video_path)
@@ -16,6 +18,7 @@ def PlayVideoWithSound(video_path, start_time, end_time, video_text):
     
     # 開始位置と終了位置のフレーム数を計算
     start_frame = int(start_time * fps)
+    print(start_frame)
     end_frame = int(end_time * fps)
     
     # 開始位置にシーク
@@ -29,12 +32,13 @@ def PlayVideoWithSound(video_path, start_time, end_time, video_text):
     
     while cap.isOpened() and current_frame <= end_frame:
         ret, frame = cap.read()
+        frame_resized = cv2.resize(frame, (int(int(width)/2), int(int(height)/2)))
         if not ret:
             break
-        
+
         add_text(frame, video_text)
         # フレームを表示
-        cv2.imshow('Video', frame)
+        cv2.imshow('Video', frame_resized)
         
         # 音声を再生
         audio_frame, val = player.get_frame()
@@ -71,3 +75,6 @@ def add_text(img, text):
 
     # 画像に文字を追加する
     cv2.putText(img, text, position, font, font_scale, color, thickness)
+
+if __name__ == "__main__":
+    PlayVideoWithSound("data/00617.mp4", 770, 803, "aiueo")
