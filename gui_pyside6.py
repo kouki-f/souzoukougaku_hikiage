@@ -16,11 +16,12 @@ class MainWindow(QWidget):
 
         #ウィンドウサイズの調整
         self.windowWidth = 600   # ウィンドウの横幅
-        self.windowHeight = 500  # ウィンドウの高さ
+        self.windowHeight = 600  # ウィンドウの高さ
         self.setFixedSize(self.windowWidth, self.windowHeight)
 
         #動画の取得
-        self.cap = cv2.VideoCapture("data/00617.mp4")
+        self.video_path = "data/00617.mp4"
+        self.cap = cv2.VideoCapture(self.video_path)
         self.fps = self.cap.get(cv2.CAP_PROP_FPS)
 
         #ウィジェットの呼び出し
@@ -46,13 +47,16 @@ class MainWindow(QWidget):
         self.label1.setAlignment(Qt.AlignCenter)
 
     def SetLabel2(self):
-        self.label2 = QLabel('', self)
+        self.label2 = QLabel('ここに返答が表示されます。', self)
         self.label2.setWordWrap(True)
         self.label2.setMaximumWidth(self.windowWidth)
         self.label2.setAlignment(Qt.AlignCenter)
+        self.label2.setStyleSheet("QLabel {font-size: 20px;}")
 
     def SetLabel3(self):
         self.label3 = QLabel(self)
+        image = QPixmap(r"data/play_movie.png")
+        self.label3.setPixmap(image)
 
     def SetButton1(self):
         self.button1 = QPushButton('音声認識', self)
@@ -69,17 +73,14 @@ class MainWindow(QWidget):
         QApplication.processEvents()
 
         #マイクで受け取った音声を認識してテキストに出力
-        while True:
-            audio = self.speech.grab_audio()
-            speech = self.speech.recognize_audio(audio)
-            self.speech.speech.append(speech)
+        audio = self.speech.grab_audio()
+        speech = self.speech.recognize_audio(audio)
+        self.speech.speech.append(speech)
 
-            if speech == 1:
-                speech = f"認識できませんでした"
-            elif speech == 2:
-                speech = f"音声認識のリクエストが失敗しました:"
-            else:
-                break
+        if speech == 1:
+            speech = f"認識できませんでした"
+        if speech == 2:
+            speech = f"音声認識のリクエストが失敗しました:"
 
         self.button1.setText('やり直す')
         self.label1.setText(speech)
@@ -101,10 +102,19 @@ class MainWindow(QWidget):
             self.label2.setText(ans)
             print(self.inputted_text, video_time)
 
+            #動画を再生
             self.play_video_sound()
-            fps = self.cap.get(cv2.CAP_PROP_FPS)
-            self.start_frame = int(video_time[0] * fps)
-            self.end_frame = int(video_time[1] * fps)
+
+            #動画の再生秒数にシーク
+            self.start_frame = int(video_time[0] * self.fps)
+            self.end_frame = int(video_time[1] * self.fps)
+            self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.start_frame)
+
+            #音声の取得、再生秒数にシーク
+            print(1)
+            self.player = MediaPlayer(self.video_path)
+            self.player.seek(video_time[0], relative=False)
+            print(2)
         else:
             self.label2.setText("検索結果が見つかりませんでした。")
         self.button2.setText('検索')
@@ -113,19 +123,25 @@ class MainWindow(QWidget):
     def play_video_sound(self):
         self.timer = QTimer()
         self.timer.timeout.connect(self.nextFrame)
-        self.timer.start(1000. / 29.97)  # 30fps
+        self.timer.start(1000. / self.fps)
 
     def nextFrame(self):
-        #while self.cap.isOpened() and self.start_frame <= self.end_frame:
-            ret, frame = self.cap.read()
-            if ret:
-                # OpenCVの画像データをPySide6で表示できるように変換
-                frame = cv2.resize(frame, None, fx=0.3, fy=0.3)
-                image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                h, w, c = image.shape
-                qimg = QImage(image.data, w, h, w*c, QImage.Format_RGB888)
-                pixmap = QPixmap.fromImage(qimg)
-                self.label3.setPixmap(pixmap)
+        ret, frame = self.cap.read()
+        if ret:
+            # OpenCVの画像データをPySide6で表示できるように変換
+            frame = cv2.resize(frame, None, fx=0.3, fy=0.3)
+            image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            h, w, c = image.shape
+            qimg = QImage(image.data, w, h, w*c, QImage.Format_RGB888)
+
+            #動画を再生
+            pixmap = QPixmap.fromImage(qimg)
+            self.label3.setPixmap(pixmap)
+
+            #音声を再生
+            audio_frame, val = self.player.get_frame()
+            if val != 'eof' and audio_frame is not None:
+                img, t = audio_frame
 
 if __name__ == "__main__":
     app = QApplication([])
