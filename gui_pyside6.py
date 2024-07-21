@@ -8,13 +8,13 @@ from ffpyplayer.player import MediaPlayer
 from pygame import mixer as pym
 import time
 import cv2
-#pip install pygame==2.4.0
 
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.speech = sp()
         self.player = ''
+        self.play_run = 0
         self.inputted_text = "None"
         self.setWindowTitle("抑留者データベース-安田")
 
@@ -50,8 +50,7 @@ class MainWindow(QWidget):
         return MediaPlayer(video_path)
     """
 
-        #ウィジェットの設定(SetLabel1 ~ SetuButton2)
-
+    #ウィジェットの設定(SetLabel1 ~ SetuButton2)
     def SetLabel1(self):
         self.label1 = QLabel('「音声認識」を押してください', self)
         self.label1.setAlignment(Qt.AlignCenter)
@@ -78,6 +77,9 @@ class MainWindow(QWidget):
 
         #音声認識の関数
     def import_speech(self, sp):
+        if self.play_run == 1:
+            self.play_stop()
+
         self.button1.setText('話してください…')
         self.label1.setText('')
         QApplication.processEvents()
@@ -99,6 +101,9 @@ class MainWindow(QWidget):
 
         #データベースを参照
     def search_database(self):
+        if self.play_run == 1:
+            self.play_stop()
+
         if self.inputted_text == "None":
             self.label1.setText('質問を入力してください')
             QApplication.processEvents()
@@ -119,6 +124,7 @@ class MainWindow(QWidget):
             self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.start_frame)
 
             #動画,音声を再生
+            self.play_run = 1
             self.video_seconds = time.time() + 1.15
             self.play_sound(self.video_time[0])
             self.play_video(fps)
@@ -161,12 +167,16 @@ class MainWindow(QWidget):
 
         #指定した秒数を超えると再生を停止
         if time.time() - self.video_seconds >= self.video_time[1] - self.video_time[0]:
-            pym.music.stop()
-            self.timer.stop()
+            self.play_stop()
 
-            #静止画像に置き換え
-            self.label3.setPixmap(self.image)
-            QApplication.processEvents()
+    def play_stop(self):
+        pym.music.stop()
+        self.timer.stop()
+
+        #静止画像に置き換え
+        self.label3.setPixmap(self.image)
+        QApplication.processEvents()
+        self.play_run = 0
 
 if __name__ == "__main__":
     app = QApplication([])
