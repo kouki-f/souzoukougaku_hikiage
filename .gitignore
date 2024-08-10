@@ -5,3 +5,7 @@ model_assets/yasuda/yasuda_e100_s3462.safetensors
 /faq_ai/__pycache__
 /voice_stt/__pycache__
 data/00617.mp4
+/build
+/output_voice/__pycache__
+/ja_core_news_md
+/dist
