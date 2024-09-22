@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QApplication, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QWidget
+from PySide6.QtWidgets import QApplication, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QWidget, QLineEdit
 from PySide6.QtGui import QPixmap, Qt, QImage
 from PySide6.QtCore import QTimer
 from voice_stt.run import SpeechRecognizer as sp
@@ -15,7 +15,7 @@ class MainWindow(QWidget):
         self.speech = sp()
         self.player = ''
         self.play_run = 0
-        self.inputted_text = "None"
+        self.inputted_text = ""
         self.setWindowTitle("抑留者データベース-安田")
 
 
@@ -34,29 +34,39 @@ class MainWindow(QWidget):
         self.SetLabel3()
         self.SetButton1()
         self.SetButton2()
+        self.SetTextEdit1()
 
-        #ウィジェットの配置S
+        #ウィジェットの配置
         layout = QVBoxLayout(self)
         hlayout = QHBoxLayout(self)
         layout.addWidget(self.label1)
         hlayout.addWidget(self.button1)
         hlayout.addWidget(self.button2)
         layout.insertLayout(1, hlayout)
+        layout.addWidget(self.TextEdit1)
         layout.addWidget(self.label2)
         layout.addWidget(self.label3)
 
-    """
-    def get_audio_player(self, video_path):
-        return MediaPlayer(video_path)
-    """
+    def search_textbase(self):
+        self.inputted_text = self.TextEdit1.text()
+        self.search_database()
+
+    def SetTextEdit1(self):
+        self.TextEdit1 = QLineEdit(self)
+        self.TextEdit1.setAlignment(Qt.AlignCenter)
 
     #ウィジェットの設定(SetLabel1 ~ SetuButton2)
     def SetLabel1(self):
-        self.label1 = QLabel('「音声認識」を押してください', self)
+        if self.inputted_text == "":
+            self.label1 = QLabel('', self)
+            #"「音声認識」を押してください"
+        else:
+            self.label1 = QLabel(self.inputted_text, self)
         self.label1.setAlignment(Qt.AlignCenter)
+        self.label1.setStyleSheet("QLabel {font-size: 25px;}")
 
     def SetLabel2(self):
-        self.label2 = QLabel('ここに返答が表示されます。', self)
+        self.label2 = QLabel('', self)
         self.label2.setWordWrap(True)
         self.label2.setMaximumWidth(self.windowWidth)
         self.label2.setAlignment(Qt.AlignCenter)
@@ -64,7 +74,7 @@ class MainWindow(QWidget):
 
     def SetLabel3(self):
         self.label3 = QLabel(self)
-        self.image = QPixmap(r"data/play_movie.png")
+        self.image = QPixmap(r"data/play_movie2.png")
         self.label3.setPixmap(self.image)
 
     def SetButton1(self):
@@ -73,7 +83,8 @@ class MainWindow(QWidget):
 
     def SetButton2(self):
         self.button2 = QPushButton('検索', self)
-        self.button2.clicked.connect(self.search_database)
+        #self.button2.clicked.connect(self.search_database)
+        self.button2.clicked.connect(self.search_textbase)
 
         #音声認識の関数
     def import_speech(self, sp):
@@ -98,6 +109,7 @@ class MainWindow(QWidget):
         self.label1.setText(speech)
         print(speech)
         self.inputted_text = speech
+        self.search_database()
 
         #データベースを参照
     def search_database(self):
@@ -114,20 +126,21 @@ class MainWindow(QWidget):
 
         [similarity, ans, self.video_time] = search_ans(self.inputted_text)
         if similarity > 0.9:
-            self.label2.setText(ans)
+            self.ans_list = list(ans)
+            self.label2.setText("")
             print(self.inputted_text, self.video_time)
-            fps = self.cap.get(cv2.CAP_PROP_FPS)
+            self.fps = self.cap.get(cv2.CAP_PROP_FPS)
 
             #動画の再生秒数にシーク
-            self.start_frame = int(self.video_time[0] * fps)
-            self.end_frame = int(self.video_time[1] * fps)
+            self.start_frame = int(self.video_time[0] * self.fps)
+            self.end_frame = int(self.video_time[1] * self.fps)
             self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.start_frame)
 
             #動画,音声を再生
             self.play_run = 1
             self.video_seconds = time.time() + 1.15
             self.play_sound(self.video_time[0])
-            self.play_video(fps)
+            self.play_video(self.fps)
 
             """
             #音声の取得、再生秒数にシーク
@@ -143,6 +156,9 @@ class MainWindow(QWidget):
         #動画を再生
     def play_video(self, fps):
         self.timer = QTimer()
+        self.loop_num = 0
+        self.loop_len = 0
+        self.ans_charactor = ""
         self.timer.timeout.connect(self.nextFrame)
         self.timer.start(1000. / (fps*1.046))
 
@@ -153,10 +169,11 @@ class MainWindow(QWidget):
         pym.music.play(loops=-1, start=start_time)
 
     def nextFrame(self):
+        self.loop_num += 1
         ret, frame = self.cap.read()
         if ret:
             # OpenCVの画像データをPySide6で表示できるように変換
-            frame = cv2.resize(frame, None, fx=0.3, fy=0.3)
+            frame = cv2.resize(frame, None, fx=0.675, fy=0.675)
             image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             h, w, c = image.shape
             qimg = QImage(image.data, w, h, w*c, QImage.Format_RGB888)
@@ -164,6 +181,13 @@ class MainWindow(QWidget):
             #動画を再生
             pixmap = QPixmap.fromImage(qimg)
             self.label3.setPixmap(pixmap)
+
+            if (self.video_time[1] - self.video_time[0]) * self.fps / len(self.ans_list)* 0.5 <= self.loop_num:
+                if not len(self.ans_list) <= self.loop_len:
+                    self.ans_charactor += self.ans_list[self.loop_len]
+                self.loop_num = 0
+                self.loop_len += 1
+                self.label2.setText(self.ans_charactor)
 
         #指定した秒数を超えると再生を停止
         if time.time() - self.video_seconds >= self.video_time[1] - self.video_time[0]:
