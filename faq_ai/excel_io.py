@@ -16,6 +16,23 @@ class ImportData():
         self.df.loc[row, column_name] = data
         self.df.to_excel(self.data_path, sheet_name=self.sheet_name, index=False)
 
+    # 最終行にデータを追加するメソッド
+    def save_data_to_last_row(self, data, column_name):
+        # 現在の最終行のインデックスを取得（データが存在する行の数）
+        last_row_index = len(self.df)
+
+        # 新しい行を作成してデータを挿入
+        self.df.loc[last_row_index, column_name] = data
+
+        # Excelファイルに上書き保存
+        self.df.to_excel(self.data_path, sheet_name=self.sheet_name, index=False)
+
+    def is_video_data(self, row):
+        if self.df.at[row, "データ元"] == "動画":
+            return True
+        else:
+            return False
+
     def get_video_time(self, row):
         start = self.df.at[row, "始まり"]
         stop = self.df.at[row, "終わり"]

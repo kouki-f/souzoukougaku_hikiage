@@ -25,6 +25,12 @@ def search_ans(text):
             most_similar_index = idx
 
     most_similar_sentence = io.get_data(most_similar_index, "原文")
-    video_time = io.get_video_time(most_similar_index)
-    print(most_similar_index + 1, highest_similarity, most_similar_sentence)
-    return [highest_similarity, most_similar_sentence, video_time]
+    is_video = io.is_video_data(most_similar_index)
+
+    if is_video:
+        video_time = io.get_video_time(most_similar_index)
+        print(most_similar_index + 1, highest_similarity, most_similar_sentence)
+        return [is_video, highest_similarity, most_similar_sentence, video_time]
+    else:
+        print(most_similar_index + 1, highest_similarity, most_similar_sentence)
+        return [is_video, highest_similarity, most_similar_sentence, [-1, -1]] # 動画データでない場合は開始終了時間に[-1, -1]を返す
