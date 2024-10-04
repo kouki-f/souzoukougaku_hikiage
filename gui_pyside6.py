@@ -124,7 +124,7 @@ class MainWindow(QWidget):
         self.button2.setText('検索中…')
         QApplication.processEvents()
 
-        [similarity, ans, self.video_time] = search_ans(self.inputted_text)
+        [value, similarity, ans, self.video_time] = search_ans(self.inputted_text)
         if similarity > 0.9:
             self.ans_list = list(ans)
             self.label2.setText("")
