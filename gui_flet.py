@@ -1,6 +1,7 @@
 from voice_stt.run import SpeechRecognizer as sp
 from faq_ai.faq_ai_main import search_ans
 from pygame import mixer as pym
+import faq_ai.excel_io as excel_io
 import cv2
 import flet as ft
 import time
@@ -21,16 +22,16 @@ class GUI():
         self.fps = 29.97
 
     def main(self, page: ft.Page):
-        #page.theme_mode = "light"
+        page.theme_mode = "light"
         #page.update()
         page.window.width = 500
         page.window.height = 800
 
         #ウィジェットを定義
-        self.create_menubar()
+        self.create_menubar(page)
         self.text1 = ft.Text("  ", size=22)
         self.text2 = ft.Text("字幕表示", size=22)
-        self.textbox = ft.TextField(label="質問を入力")
+        self.textbox = ft.TextField(label="質問を入力", width=640)
         self.button1 = ft.ElevatedButton(text="音声認識",
                                     width=150,
                                     on_click=self.import_speech
@@ -49,13 +50,23 @@ class GUI():
 
         page.add(ft.Row([self.menubar]))
         page.add(ft.Row([self.text1], alignment=ft.MainAxisAlignment.CENTER))
-        page.add(ft.Row([self.button1, self.button2], alignment=ft.MainAxisAlignment.SPACE_EVENLY))
-        page.add(ft.Row([self.textbox], alignment=ft.MainAxisAlignment.CENTER))
+        self.button_set = ft.Row([self.button1, self.button2], width=640, alignment=ft.MainAxisAlignment.SPACE_EVENLY)
+        #page.add(ft.Row([self.button1, self.button2], width=640, alignment=ft.MainAxisAlignment.SPACE_EVENLY))
+        #page.add(ft.Row([self.textbox], alignment=ft.MainAxisAlignment.CENTER))
 
         container1 = ft.Container(
             content = self.image_display,
             alignment=ft.alignment.top_center,
         )
+
+        container2 = ft.Container(
+            content = self.button_set,
+            alignment=ft.alignment.top_center,
+        )
+
+        page.add(container2)
+
+        page.add(ft.Row([self.textbox], alignment=ft.MainAxisAlignment.CENTER))
 
         video_view = ft.Stack([container1,
                         ft.Row([self.button3],
@@ -66,7 +77,6 @@ class GUI():
 
         page.add(video_view)
 
-        print(page.window.width)
         container2 = ft.Container(
             content=self.text2,
             width=470,
@@ -111,7 +121,10 @@ class GUI():
         self.inputted_text = speech
         self.search_database()
 
-    def create_menubar(self):
+    def create_menubar(self, page: ft.Page):
+        def go_to_sub1(e):
+            page.go("/sub1")
+
         self.menubar = ft.MenuBar(
             expand=True,
             style=ft.MenuStyle(
@@ -137,25 +150,34 @@ class GUI():
                             on_click=self.video_start,
                         ),
                         ft.MenuItemButton(
-                            content=ft.Text("最初に戻る"),
-                            #leading=ft.Icon(ft.icons.SAVE),
-                            style=ft.ButtonStyle(
-                                bgcolor={ft.ControlState.HOVERED: ft.colors.GREEN_100}
-                            ),
-                            #on_click=handle_menu_item_click,
-                        ),
-                        ft.MenuItemButton(
-                            content=ft.Text("データベースの編集"),
+                            content=ft.Text("データの追加"),
                             #leading=ft.Icon(ft.icons.CLOSE),
                             style=ft.ButtonStyle(
                                 bgcolor={ft.ControlState.HOVERED: ft.colors.GREEN_100}
                             ),
-                            #on_click=handle_menu_item_click,
+                            # Zon_click=go_to_sub1,
+                        ),
+                        ft.MenuItemButton(
+                            content=ft.Text("データの参照"),
+                            #leading=ft.Icon(ft.icons.INFO),
+                            style=ft.ButtonStyle(
+                                bgcolor={ft.ControlState.HOVERED: ft.colors.GREEN_100}
+                            ),
+                            #on_click=self.video_start,
+                        ),
+                        ft.MenuItemButton(
+                            content=ft.Text("質問テンプレート"),
+                            #leading=ft.Icon(ft.icons.INFO),
+                            style=ft.ButtonStyle(
+                                bgcolor={ft.ControlState.HOVERED: ft.colors.GREEN_100}
+                            ),
+                            #on_click=self.video_start,
                         ),
                     ],
                 ),
+                #"""
                 ft.SubmenuButton(
-                    content=ft.Text("View"),
+                    content=ft.Text(" "),
                     #on_open=handle_submenu_open,
                     #on_close=handle_submenu_close,
                     #on_hover=handle_submenu_hover,
@@ -189,6 +211,7 @@ class GUI():
                         )
                     ],
                 ),
+                
             ],
         )
 
