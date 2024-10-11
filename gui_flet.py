@@ -17,6 +17,8 @@ class GUI():
         self.inputted_text = ""
         self.width = 800
 
+        self.excel_io = excel_io.ImportData("data/question_test.xlsx", "Sheet1")
+
         #cv2で動画を読み込む
         self.video_path = "data/00617.mp4"
         self.cap = cv2.VideoCapture(self.video_path)
@@ -26,17 +28,13 @@ class GUI():
         page.title = "抑留者データベース-安田"
         page.theme_mode = "light"
         #page.update()
-        page.window.width = 500
-        page.window.height = 800
-
-        self.page_main(page)
-
         """
-        time.sleep(5)
-        self.page_sub1(page)
-        time.sleep(5)
+        page.window.width = 1080
+        page.window.height = 1920
+        """
+        page.window.maximized = True
+
         self.page_main(page)
-        #"""
 
     #ウィジェットを定義
     def page_main(self, page):
@@ -65,8 +63,6 @@ class GUI():
         page.add(ft.Row([self.menubar]))
         page.add(ft.Row([self.text1], alignment=ft.MainAxisAlignment.CENTER))
         self.button_set = ft.Row([self.button1, self.button2], width=self.width, alignment=ft.MainAxisAlignment.SPACE_EVENLY)
-        #page.add(ft.Row([self.button1, self.button2], width=640, alignment=ft.MainAxisAlignment.SPACE_EVENLY))
-        #page.add(ft.Row([self.textbox], alignment=ft.MainAxisAlignment.CENTER))
 
         container1 = ft.Container(
             content = self.image_display,
@@ -132,10 +128,20 @@ class GUI():
         self.create_menubar(page)
         self.text1 = ft.Text("Excelにデータを追加", size=22)
         self.text_a = ft.Container(ft.Text("※必須の入力項目です", size=14, color="red"), padding=0, alignment=ft.alignment.center_left, width=800)
-        self.textbox1 = ft.Container(ft.TextField(label="回答文", width=800), padding=ft.Padding(0, 20, 0, 0), alignment=ft.alignment.center)
-        self.textbox2 = ft.Container(ft.TextField(label="質問文１", width=800), padding=ft.Padding(0, 50, 0, 0), alignment=ft.alignment.center_left, width=800)
-        self.textbox3 = ft.Container(ft.TextField(label="質問文２", width=800), padding=ft.Padding(0, 15, 0, 0), alignment=ft.alignment.center)
-        self.textbox4 = ft.Container(ft.TextField(label="質問文３", width=800), padding=ft.Padding(0, 39, 0, 20), alignment=ft.alignment.center)
+
+        self.textbox1_p = ft.TextField(label="回答文", width=self.width)
+        self.textbox2_p = ft.TextField(label="質問文1", width=self.width)
+        self.textbox3_p = ft.TextField(label="質問文2", width=self.width)
+        self.textbox4_p = ft.TextField(label="質問文3", width=self.width)
+
+        #エラー対策で変数だけ作っとく
+        self.textbox5_p = ft.TextField(label="開始秒数", width=self.width)
+        self.textbox6_p = ft.TextField(label="終了秒数", width=self.width)
+
+        self.textbox1 = ft.Container(self.textbox1_p, padding=ft.Padding(0, 20, 0, 0), alignment=ft.alignment.center)
+        self.textbox2 = ft.Container(self.textbox2_p, padding=ft.Padding(0, 50, 0, 0), alignment=ft.alignment.center)
+        self.textbox3 = ft.Container(self.textbox3_p, padding=ft.Padding(0, 15, 0, 0), alignment=ft.alignment.center)
+        self.textbox4 = ft.Container(self.textbox4_p, padding=ft.Padding(0, 39, 0, 20), alignment=ft.alignment.center)
 
         text_sentence = "※質問文を増やすほど、回答の精度がより高くなります。"
         self.text2 = ft.Container(ft.Text(text_sentence, size=20, color="red"), padding=0, alignment=ft.alignment.center_left, width=800)
@@ -144,7 +150,7 @@ class GUI():
             ft.ElevatedButton(
                 text="保存して戻る",
                 width=150,
-                on_click=lambda e: self.page_main(page)
+                on_click=lambda e: self.save_to_exit(page)
                 ),
                 alignment=ft.alignment.center_right,
                 width=800,
@@ -195,20 +201,74 @@ class GUI():
             self.button2.visible = False
         page.update()
 
+    def save_to_exit(self, page):
+        column_title = ["始まり", "終わり", "原文", "質問1", "質問2", "質問3", "データ元"]
+        save_data = [
+            self.textbox5_p.value,
+            self.textbox6_p.value,
+            self.textbox1_p.value,
+            self.textbox2_p.value,
+            self.textbox3_p.value,
+            self.textbox4_p.value,
+            self.dropdown1.value
+            ]
+
+        for i in range(len(column_title)):
+            self.excel_io.save_data_to_last_row(save_data[i], column_title[i])
+
+        self.page_main(page)
+
     def page_sub2(self, page):
+        def on_file_picked(e: ft.FilePickerResultEvent):
+            if e.files:
+                target_file.current.value = e.files[0].path
+                page.update()
+
+        def show_file_picker(_: ft.ControlEvent):
+            file_picker.pick_files(
+                allow_multiple=False,
+                file_type="custom",
+                allowed_extensions=image_extensions
+            )
+
+        target_file = ft.Ref[ft.Text]()
+        image_extensions = ["mp4", "MTS"]
+        file_picker = ft.FilePicker(on_result=on_file_picked)
+        page.overlay.append(file_picker)
+
         page.controls.clear()
         self.create_menubar(page)
         self.text1 = ft.Text("Excelにデータを追加", size=22)
-        self.textbox1 = ft.TextField(label="開始秒数", width=100)
-        self.textbox2 = ft.TextField(label="終了秒数", width=100)
-        self.textbox3 = ft.TextField(label="回答文", width=500)
-        self.textbox4 = ft.TextField(label="質問文１", width=500)
-        self.textbox5 = ft.TextField(label="質問文２", width=500)
-        self.textbox6 = ft.TextField(label="質問文３", width=500)
-        self.button1 = ft.ElevatedButton(text="保存して戻る",
-                            width=150,
-                            on_click=lambda e: self.page_main(page)
-                            )
+        self.text_a = ft.Container(ft.Text("※必須の入力項目です", size=14, color="red"), padding=0, alignment=ft.alignment.center_left, width=800)
+
+        self.textbox1_p = ft.TextField(label="回答文", width=self.width)
+        self.textbox2_p = ft.TextField(label="質問文1", width=self.width)
+        self.textbox3_p = ft.TextField(label="質問文2", width=self.width)
+        self.textbox4_p = ft.TextField(label="質問文3", width=self.width)
+        self.textbox5_p = ft.TextField(label="開始秒数", width=self.width)
+        self.textbox6_p = ft.TextField(label="終了秒数", width=self.width)
+
+        self.textbox1 = ft.Container(self.textbox1_p, padding=ft.Padding(0, 20, 0, 0), alignment=ft.alignment.center)
+        self.textbox2 = ft.Container(self.textbox2_p, padding=ft.Padding(0, 50, 0, 0), alignment=ft.alignment.center)
+        self.textbox3 = ft.Container(self.textbox3_p, padding=ft.Padding(0, 15, 0, 0), alignment=ft.alignment.center)
+        self.textbox4 = ft.Container(self.textbox4_p, padding=ft.Padding(0, 39, 0, 20), alignment=ft.alignment.center)
+
+        self.textbox5 = ft.Container(self.textbox5_p, alignment=ft.alignment.center, width=100)
+        self.textbox6 = ft.Container(self.textbox6_p, alignment=ft.alignment.center, width=100)
+
+        text_sentence = "※質問文を増やすほど、回答の精度がより高くなります。"
+        self.text2 = ft.Container(ft.Text(text_sentence, size=20, color="red"), padding=0, alignment=ft.alignment.center_left, width=800)
+
+        self.button1 = ft.Container(
+            ft.ElevatedButton(
+                text="保存して戻る",
+                width=150,
+                on_click=lambda e: self.save_to_exit(page)
+                ),
+                alignment=ft.alignment.center_right,
+                width=800,
+            )
+
         self.dropdown1 = ft.Dropdown(
         width=130,
         label="データ形式",
@@ -216,24 +276,56 @@ class GUI():
                 ft.dropdown.Option("動画"),
                 ft.dropdown.Option("文字"),
             ],
+            on_change=lambda e: self.select_file_button(page),
         )
-        page.add(ft.Row([self.menubar]))
-        page.add(ft.Row([self.text1], alignment=ft.MainAxisAlignment.CENTER))
-        page.add(ft.Row([
-                self.textbox1,
-                self.textbox2,
-                self.dropdown1
-                ],
-                alignment=ft.MainAxisAlignment.CENTER))
 
-        page.add(ft.Column([
+        self.button2 = ft.ElevatedButton("動画を指定", on_click=show_file_picker)
+
+        textbox_group = ft.Column([
+                self.textbox1,
+                self.text_a,
+                self.textbox2,
+                self.text_a,
                 self.textbox3,
                 self.textbox4,
-                self.textbox5,
-                self.textbox6],
-                alignment=ft.MainAxisAlignment.CENTER))
+                self.text2,
+                self.button1],
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                alignment=ft.MainAxisAlignment.CENTER)
 
-        page.add(ft.Row([self.button1], alignment=ft.MainAxisAlignment.END))
+        page.add(ft.Row([self.menubar]))
+        page.add(ft.Row([self.text1], alignment=ft.MainAxisAlignment.CENTER))
+
+        page.add(ft.Row(controls=[
+            self.textbox5,
+            self.textbox6,
+            self.dropdown1,
+            self.button2,
+            ft.Text(ref=target_file),
+        ],
+        alignment=ft.MainAxisAlignment.CENTER
+        ))
+
+        page.add(textbox_group)
+
+    def page_sub3(self, page):
+        page.controls.clear()
+        self.create_menubar(page)
+        page.add(ft.Row([self.menubar]))
+
+        #Excelからデータを取得し、横幅を設定
+        headers = ["開始秒数", "終了秒数", "回答文", "質問文1", "質問文2", "質問文3", "データ形式"]
+        rows = sorted(self.excel_io.all_data_to_list(), key=lambda x: x[0])
+        column_widths = [50, 50, 450, 300, 300, 300, 50]
+
+        #float('nan')を削除
+        for i in range(len(rows)):
+            for j in range(len(rows[0])):
+                if type(rows[i][j]) is float:
+                    rows[i][j] = ""
+
+        data_table = FixedHeaderDataTable(headers, rows, column_widths)
+        page.add(data_table)
 
     def page_list(self, page):
         page.controls.clear()
@@ -285,12 +377,12 @@ class GUI():
                     #on_hover=handle_submenu_hover,
                     controls=[
                         ft.MenuItemButton(
-                            content=ft.Text("もう一度再生"),
+                            content=ft.Text("メイン画面"),
                             #leading=ft.Icon(ft.icons.INFO),
                             style=ft.ButtonStyle(
                                 bgcolor={ft.ControlState.HOVERED: ft.colors.GREEN_100}
                             ),
-                            on_click=self.video_start,
+                            on_click=lambda e: self.page_main(page),
                         ),
                         ft.MenuItemButton(
                             content=ft.Text("データの追加"),
@@ -314,7 +406,7 @@ class GUI():
                             style=ft.ButtonStyle(
                                 bgcolor={ft.ControlState.HOVERED: ft.colors.GREEN_100}
                             ),
-                            #on_click=self.video_start,
+                            on_click=lambda e: self.page_sub3(page),
                         ),
                     ],
                 ),
@@ -463,6 +555,44 @@ class GUI():
             data = base64.b64encode(image_file.read())
 
         return data.decode('utf-8')
+
+
+class FixedHeaderDataTable(ft.Column):
+
+    def __init__(self, headers, rows, column_widths):
+        super().__init__()
+        self.headers = headers
+        self.rows = rows
+        self.column_widths = column_widths
+        self.expand = True  # ページに対して自動伸縮
+
+        # ヘッダ部の作成
+        header_controls = [
+            ft.Container(ft.Text(header, weight=ft.FontWeight.BOLD), width=width, alignment=ft.alignment.center, bgcolor=ft.colors.GREY_200) \
+                for header, width in zip(self.headers, self.column_widths)
+        ]
+        header_row = ft.Row(header_controls, alignment=ft.alignment.center, height=50)
+
+        # データ部の作成
+        row_controls = []
+        for row in self.rows:
+            row_cells = [
+                ft.Container(ft.Text(cell), width=width, alignment=ft.alignment.center) \
+                    for cell, width in zip(row, self.column_widths)
+            ]
+            row_controls.append(ft.Row(row_cells, alignment=ft.alignment.center))
+        # スクロールできるようにColumnコントロールを用意
+        scrollable_data = ft.Column(
+            controls=row_controls,
+            scroll=ft.ScrollMode.ALWAYS,
+            expand=True  # 親のColumn内で自動伸縮
+        )
+
+        # ヘッダ部とデータ部を配置
+        self.controls =[
+            header_row,
+            scrollable_data
+        ]
 
 
 if __name__ == "__main__":
