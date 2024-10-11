@@ -15,6 +15,7 @@ class GUI():
         self.player = ''
         self.play_run = 0
         self.inputted_text = ""
+        self.width = 800
 
         #cv2で動画を読み込む
         self.video_path = "data/00617.mp4"
@@ -22,16 +23,29 @@ class GUI():
         self.fps = 29.97
 
     def main(self, page: ft.Page):
+        page.title = "抑留者データベース-安田"
         page.theme_mode = "light"
         #page.update()
         page.window.width = 500
         page.window.height = 800
 
-        #ウィジェットを定義
+        self.page_main(page)
+
+        """
+        time.sleep(5)
+        self.page_sub1(page)
+        time.sleep(5)
+        self.page_main(page)
+        #"""
+
+    #ウィジェットを定義
+    def page_main(self, page):
+        page.controls.clear()
         self.create_menubar(page)
         self.text1 = ft.Text("  ", size=22)
         self.text2 = ft.Text("字幕表示", size=22)
-        self.textbox = ft.TextField(label="質問を入力", width=640)
+        self.textbox_text = ft.TextField(label="質問を入力", width=self.width)
+        self.textbox = ft.Container(content = self.textbox_text, alignment=ft.alignment.center, width = self.width)
         self.button1 = ft.ElevatedButton(text="音声認識",
                                     width=150,
                                     on_click=self.import_speech
@@ -46,11 +60,11 @@ class GUI():
                                     opacity=0.0,
                                     on_click=self.video_start
                                     )
-        self.image_display = ft.Image(width=640, height=400, fit=ft.ImageFit.SCALE_DOWN)
+        self.image_display = ft.Image(width=self.width, height=400, fit=ft.ImageFit.COVER)
 
         page.add(ft.Row([self.menubar]))
         page.add(ft.Row([self.text1], alignment=ft.MainAxisAlignment.CENTER))
-        self.button_set = ft.Row([self.button1, self.button2], width=640, alignment=ft.MainAxisAlignment.SPACE_EVENLY)
+        self.button_set = ft.Row([self.button1, self.button2], width=self.width, alignment=ft.MainAxisAlignment.SPACE_EVENLY)
         #page.add(ft.Row([self.button1, self.button2], width=640, alignment=ft.MainAxisAlignment.SPACE_EVENLY))
         #page.add(ft.Row([self.textbox], alignment=ft.MainAxisAlignment.CENTER))
 
@@ -79,22 +93,151 @@ class GUI():
 
         container2 = ft.Container(
             content=self.text2,
-            width=470,
+            width=self.width - 10,
             alignment=ft.alignment.top_center
         )
         page.add(ft.Row([container2], alignment=ft.MainAxisAlignment.CENTER))
 
         #画面幅に応じてテキストの表示幅を変更
         def on_resized(e):
-            if not page.window.width >= 640:
+            if not page.window.width >= self.width:
                 container2.width = page.window.width - 20
             else:
-                container2.width = 620
+                container2.width = self.width - 20
             container2.update()
         page.on_resized = on_resized
 
         #画像を設定
         self.video_to_image()
+
+    def page_sub1(self, page):
+        def on_file_picked(e: ft.FilePickerResultEvent):
+            if e.files:
+                target_file.current.value = e.files[0].path
+                page.update()
+
+        def show_file_picker(_: ft.ControlEvent):
+            file_picker.pick_files(
+                allow_multiple=False,
+                file_type="custom",
+                allowed_extensions=image_extensions
+            )
+
+        target_file = ft.Ref[ft.Text]()
+        image_extensions = ["mp4", "MTS"]
+        file_picker = ft.FilePicker(on_result=on_file_picked)
+        page.overlay.append(file_picker)
+
+        page.controls.clear()
+        self.create_menubar(page)
+        self.text1 = ft.Text("Excelにデータを追加", size=22)
+        self.text_a = ft.Container(ft.Text("※必須の入力項目です", size=14, color="red"), padding=0, alignment=ft.alignment.center_left, width=800)
+        self.textbox1 = ft.Container(ft.TextField(label="回答文", width=800), padding=ft.Padding(0, 20, 0, 0), alignment=ft.alignment.center)
+        self.textbox2 = ft.Container(ft.TextField(label="質問文１", width=800), padding=ft.Padding(0, 50, 0, 0), alignment=ft.alignment.center_left, width=800)
+        self.textbox3 = ft.Container(ft.TextField(label="質問文２", width=800), padding=ft.Padding(0, 15, 0, 0), alignment=ft.alignment.center)
+        self.textbox4 = ft.Container(ft.TextField(label="質問文３", width=800), padding=ft.Padding(0, 39, 0, 20), alignment=ft.alignment.center)
+
+        text_sentence = "※質問文を増やすほど、回答の精度がより高くなります。"
+        self.text2 = ft.Container(ft.Text(text_sentence, size=20, color="red"), padding=0, alignment=ft.alignment.center_left, width=800)
+
+        self.button1 = ft.Container(
+            ft.ElevatedButton(
+                text="保存して戻る",
+                width=150,
+                on_click=lambda e: self.page_main(page)
+                ),
+                alignment=ft.alignment.center_right,
+                width=800,
+            )
+
+        self.dropdown1 = ft.Dropdown(
+        width=130,
+        label="データ形式",
+            options=[
+                ft.dropdown.Option("動画"),
+                ft.dropdown.Option("文字"),
+            ],
+            on_change=lambda e: self.select_file_button(page),
+        )
+
+        self.button2 = ft.ElevatedButton("動画を指定", on_click=show_file_picker)
+
+        textbox_group = ft.Column([
+                self.textbox1,
+                self.text_a,
+                self.textbox2,
+                self.text_a,
+                self.textbox3,
+                self.textbox4,
+                self.text2,
+                self.button1],
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                alignment=ft.MainAxisAlignment.CENTER)
+
+        page.add(ft.Row([self.menubar]))
+        page.add(ft.Row([self.text1], alignment=ft.MainAxisAlignment.CENTER))
+
+        page.add(ft.Row(controls=[
+            self.dropdown1,
+            self.button2,
+            ft.Text(ref=target_file),
+        ],
+        alignment=ft.MainAxisAlignment.CENTER
+        ))
+
+        page.add(textbox_group)
+
+    def select_file_button(self, page: ft.Page):
+        print(self.dropdown1.value)
+        if self.dropdown1.value == "動画":
+            self.button2.visible = True
+        else:
+            self.button2.visible = False
+        page.update()
+
+    def page_sub2(self, page):
+        page.controls.clear()
+        self.create_menubar(page)
+        self.text1 = ft.Text("Excelにデータを追加", size=22)
+        self.textbox1 = ft.TextField(label="開始秒数", width=100)
+        self.textbox2 = ft.TextField(label="終了秒数", width=100)
+        self.textbox3 = ft.TextField(label="回答文", width=500)
+        self.textbox4 = ft.TextField(label="質問文１", width=500)
+        self.textbox5 = ft.TextField(label="質問文２", width=500)
+        self.textbox6 = ft.TextField(label="質問文３", width=500)
+        self.button1 = ft.ElevatedButton(text="保存して戻る",
+                            width=150,
+                            on_click=lambda e: self.page_main(page)
+                            )
+        self.dropdown1 = ft.Dropdown(
+        width=130,
+        label="データ形式",
+            options=[
+                ft.dropdown.Option("動画"),
+                ft.dropdown.Option("文字"),
+            ],
+        )
+        page.add(ft.Row([self.menubar]))
+        page.add(ft.Row([self.text1], alignment=ft.MainAxisAlignment.CENTER))
+        page.add(ft.Row([
+                self.textbox1,
+                self.textbox2,
+                self.dropdown1
+                ],
+                alignment=ft.MainAxisAlignment.CENTER))
+
+        page.add(ft.Column([
+                self.textbox3,
+                self.textbox4,
+                self.textbox5,
+                self.textbox6],
+                alignment=ft.MainAxisAlignment.CENTER))
+
+        page.add(ft.Row([self.button1], alignment=ft.MainAxisAlignment.END))
+
+    def page_list(self, page):
+        page.controls.clear()
+        self.create_menubar(page)
 
     def import_speech(self, e):
         self.text1.value = "話してください…"
@@ -121,7 +264,7 @@ class GUI():
         self.inputted_text = speech
         self.search_database()
 
-    def create_menubar(self, page: ft.Page):
+    def create_menubar(self, page):
         def go_to_sub1(e):
             page.go("/sub1")
 
@@ -155,15 +298,15 @@ class GUI():
                             style=ft.ButtonStyle(
                                 bgcolor={ft.ControlState.HOVERED: ft.colors.GREEN_100}
                             ),
-                            # Zon_click=go_to_sub1,
+                            on_click=lambda e: self.page_sub1(page),
                         ),
                         ft.MenuItemButton(
-                            content=ft.Text("データの参照"),
+                            content=ft.Text("データの追加-詳細モード"),
                             #leading=ft.Icon(ft.icons.INFO),
                             style=ft.ButtonStyle(
                                 bgcolor={ft.ControlState.HOVERED: ft.colors.GREEN_100}
                             ),
-                            #on_click=self.video_start,
+                            on_click=lambda e: self.page_sub2(page),
                         ),
                         ft.MenuItemButton(
                             content=ft.Text("質問テンプレート"),
@@ -211,7 +354,6 @@ class GUI():
                         )
                     ],
                 ),
-                
             ],
         )
 
@@ -256,7 +398,7 @@ class GUI():
 
     #テキストボックス入力後の検索時に関数に値を入れるために経由
     def search(self, e):
-        self.inputted_text = self.textbox.value
+        self.inputted_text = self.textbox_text.value
         self.search_database()
 
     #音声再生
