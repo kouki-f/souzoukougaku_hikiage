@@ -22,13 +22,7 @@ class ImportData():
         last_row_index = len(self.df)
 
         # 新しい行を作成してデータを挿入
-        self.df.loc[last_row_index, "始まり"] = data[0]
-        self.df.loc[last_row_index, "終わり"] = data[1]
-        self.df.loc[last_row_index, "原文"] = data[2]
-        self.df.loc[last_row_index, "質問1"] = data[3]
-        self.df.loc[last_row_index, "質問2"] = data[4]
-        self.df.loc[last_row_index, "質問3"] = data[5]
-        self.df.loc[last_row_index, "データ元"] = data[6]
+        self.df.loc[last_row_index, column_name] = data
 
         # Excelファイルに上書き保存
         self.df.to_excel(self.data_path, sheet_name=self.sheet_name, index=False)
