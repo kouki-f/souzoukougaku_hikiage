@@ -1,7 +1,7 @@
 import spacy
 
 # spaCyの英語モデルをロード
-nlp = spacy.load("ja_core_news_md")
+nlp = spacy.load("_internal/ja_core_news_md/ja_core_news_md-3.7.0")
 
 def find_most_similar_sentence(sentences, target_sentence): #sentences=list, target_sentence=str
     # ターゲットの文章をspaCyのドキュメントオブジェクトに変換
