@@ -17,7 +17,7 @@ class GUI():
         self.inputted_text = ""
         self.width = 800
 
-        self.excel_io = excel_io.ImportData("data/question_test.xlsx", "Sheet1")
+        self.excel_io = excel_io.ImportData("data/question_test2.xlsx", "Sheet1")
 
         #cv2で動画を読み込む
         self.video_path = "data/00617.mp4"
