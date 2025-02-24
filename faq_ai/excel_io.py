@@ -44,11 +44,15 @@ class ImportData():
         start = self.df.at[row, "始まり"]
         stop = self.df.at[row, "終わり"]
         return [start, stop]
-    
+
+    def get_video_path(self, row):
+        path = self.df.at[row, "ファイルパス"]
+        return path
+
     # 全データをリストで取得
     def all_data_to_list(self):
         return self.df.values.tolist()
-    
+
 
 # data = ImportData("data/question_test3.xlsx", "sheet1")
 # print(data.all_data_to_list())

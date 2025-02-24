@@ -28,5 +28,7 @@ def search_ans(text):
     is_video = io.is_video_data(most_similar_index)
 
     video_time = io.get_video_time(most_similar_index)
+    video_path = io.get_video_path(most_similar_index)
+
     print(most_similar_index + 1, highest_similarity, most_similar_sentence)
-    return [is_video, highest_similarity, most_similar_sentence, video_time]
+    return [is_video, highest_similarity, most_similar_sentence, video_time, video_path]

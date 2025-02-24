@@ -1,6 +1,7 @@
 from voice_stt.run import SpeechRecognizer as sp
 from faq_ai.faq_ai_main import search_ans
 from pygame import mixer as pym
+from moviepy.editor import AudioFileClip
 import faq_ai.excel_io as excel_io
 import numpy as np
 import cv2
@@ -23,10 +24,6 @@ class GUI():
         self.width = 800
 
         self.excel_io = excel_io.ImportData("data/question_test3.xlsx", "sheet1")
-
-        #cv2で動画を読み込む
-        self.video_path = "data/00617.mp4"
-        self.cap = cv2.VideoCapture(self.video_path)
 
     def main(self, page: ft.Page):
         page.title = "抑留者データベース-安田"
@@ -130,12 +127,16 @@ class GUI():
         column_title = ["始まり", "終わり", "原文", "質問1", "質問2", "質問3", "データ元", "ファイルパス"]
         if self.dropdown1.value == "動画":
 
-            #dataフォルダ配下に置いた形にパスを書き換え
+            #dataフォルダ配下に置くような形にパスを書き換え
             video_path = "data\\\\" + os.path.basename(self.target_file.current.value)
+            audio_path = "data\\\\" + os.path.basename(self.target_file.current.value.replace('.mp4', '.mp3'))
 
-            #dtaaフォルダ配下に動画が無い場合，指定した動画ファイルをdataフォルダ上にコピー
+            #dataフォルダ配下に動画が無い場合，指定した動画ファイルをdataフォルダ上にコピー
             if not os.path.exists(video_path):
+                print(True)
                 shutil.copy2(self.target_file.current.value, "data")
+                audio = AudioFileClip(self.target_file.current.value) # 動画からAudioFileClipオブジェクトを生成
+                audio.write_audiofile(audio_path) # .mp3ファイルとして保存
 
             save_data = [
                 self.textbox5_p.value,
@@ -403,6 +404,12 @@ class GUI():
             ],
         )
 
+    #取得したファイル名の拡張子を変更
+    def change_extension(self, file_path, new_extension):
+        base = os.path.splitext(file_path)[0]  # 拡張子を除いたファイル名を取得
+        new_file = f"{base}.{new_extension.lstrip('.')}"  # 新しい拡張子を追加
+        return new_file
+
     #データベース上から類似度の高いものを取得する関数．数個程度候補を表示できるようにするのもいいかもしれない
     def search_database(self):
         if self.inputted_text == "None":
@@ -414,17 +421,22 @@ class GUI():
         self.button2.update()
 
         print(search_ans(self.inputted_text))
-        [value, similarity, ans, self.video_time] = search_ans(self.inputted_text)
+        [value, similarity, ans, self.video_time, path] = search_ans(self.inputted_text)
         if similarity > 0.85:
             self.ans_list = list(ans)
             self.text2.text = "　"
             self.text2.update()
             print(self.inputted_text, self.video_time)
 
+            self.sound_path = self.change_extension(path, "mp3") #拡張子名をmp3に変更
+
             self.button2.text = "検索"
             self.button2.update()
 
             if value:
+                #cv2で動画を読み込む
+                self.video_path = path
+                self.cap = cv2.VideoCapture(self.video_path)
                 self.fps = self.cap.get(cv2.CAP_PROP_FPS)
 
                 #動画の再生開始
@@ -473,7 +485,7 @@ class GUI():
     #音声再生
     def play_sound(self):
         pym.init()
-        pym.music.load("data/00617.mp3")
+        pym.music.load(self.sound_path)
         pym.music.play(loops=-1, start=self.video_time[0])
 
     # 動画再生
