@@ -2,6 +2,7 @@ from voice_stt.run import SpeechRecognizer as sp
 from faq_ai.faq_ai_main import search_ans
 from pygame import mixer as pym
 import faq_ai.excel_io as excel_io
+import numpy as np
 import cv2
 import flet as ft
 import time
@@ -9,8 +10,11 @@ from PIL import Image
 import io
 import base64
 import threading
+import shutil
+import os
 
 class GUI():
+    #ウィンドウの初期設定などを与え，mainで実行している
     def __init__(self):
         self.speech = sp()
         self.player = ''
@@ -23,21 +27,26 @@ class GUI():
         #cv2で動画を読み込む
         self.video_path = "data/00617.mp4"
         self.cap = cv2.VideoCapture(self.video_path)
-        self.fps = 29.97
 
     def main(self, page: ft.Page):
         page.title = "抑留者データベース-安田"
+
+        #テーマ色の変更が可能．デフォルトは白
         page.theme_mode = "light"
+
+        #ウィンドウサイズを指定する場合は以下を使う
         #page.update()
         """
         page.window.width = 1080
         page.window.height = 1920
         """
+
+        #全画面表示を行う場合は以下を使う．UI上から変更できるようにしたいかも
         page.window.maximized = True
 
         self.page_main(page)
 
-    #ウィジェットを定義
+    #実際に質問回答を行うページのウィジェットを定義
     def page_main(self, page):
         page.controls.clear()
         self.create_menubar(page)
@@ -107,93 +116,7 @@ class GUI():
         #画像を設定
         self.video_to_image()
 
-    def page_sub1(self, page):
-        def on_file_picked(e: ft.FilePickerResultEvent):
-            if e.files:
-                target_file.current.value = e.files[0].path
-                page.update()
-
-        def show_file_picker(_: ft.ControlEvent):
-            file_picker.pick_files(
-                allow_multiple=False,
-                file_type="custom",
-                allowed_extensions=image_extensions
-            )
-
-        target_file = ft.Ref[ft.Text]()
-        image_extensions = ["mp4", "MTS"]
-        file_picker = ft.FilePicker(on_result=on_file_picked)
-        page.overlay.append(file_picker)
-
-        page.controls.clear()
-        self.create_menubar(page)
-        self.text1 = ft.Text("回答データベース", size=22)
-        self.text_a = ft.Container(ft.Text("※必須の入力項目です", size=14, color="red"), padding=0, alignment=ft.alignment.center_left, width=800)
-
-        self.textbox1_p = ft.TextField(label="回答文", width=self.width)
-        self.textbox2_p = ft.TextField(label="質問文1", width=self.width)
-        self.textbox3_p = ft.TextField(label="質問文2", width=self.width)
-        self.textbox4_p = ft.TextField(label="質問文3", width=self.width)
-
-        #エラー対策で変数だけ作っとく
-        self.textbox5_p = ft.TextField(label="ファイル名", width=self.width)
-        self.textbox6_p = ft.TextField(label="終了秒数", width=self.width)
-
-        self.textbox1 = ft.Container(self.textbox1_p, padding=ft.Padding(0, 20, 0, 0), alignment=ft.alignment.center)
-        self.textbox2 = ft.Container(self.textbox2_p, padding=ft.Padding(0, 50, 0, 0), alignment=ft.alignment.center)
-        self.textbox3 = ft.Container(self.textbox3_p, padding=ft.Padding(0, 15, 0, 0), alignment=ft.alignment.center)
-        self.textbox4 = ft.Container(self.textbox4_p, padding=ft.Padding(0, 39, 0, 20), alignment=ft.alignment.center)
-
-        text_sentence = "※質問文を増やすほど、回答の精度がより高くなります。"
-        self.text2 = ft.Container(ft.Text(text_sentence, size=20, color="red"), padding=0, alignment=ft.alignment.center_left, width=800)
-
-        self.button1 = ft.Container(
-            ft.ElevatedButton(
-                text="保存して戻る",
-                width=150,
-                on_click=lambda e: self.save_to_exit(page)
-                ),
-                alignment=ft.alignment.center_right,
-                width=800,
-            )
-
-        self.dropdown1 = ft.Dropdown(
-        width=130,
-        label="データ形式",
-            options=[
-                ft.dropdown.Option("動画"),
-                ft.dropdown.Option("文字"),
-            ],
-            on_change=lambda e: self.select_file_button(page),
-        )
-
-        self.button2 = ft.ElevatedButton("動画を指定", on_click=show_file_picker)
-
-        textbox_group = ft.Column([
-                self.textbox1,
-                self.text_a,
-                self.textbox2,
-                self.text_a,
-                self.textbox3,
-                self.textbox4,
-                self.text2,
-                self.button1],
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                alignment=ft.MainAxisAlignment.CENTER)
-
-        page.add(ft.Row([self.menubar]))
-        page.add(ft.Row([self.text1], alignment=ft.MainAxisAlignment.CENTER))
-
-        page.add(ft.Row(controls=[
-            self.dropdown1,
-            self.button2,
-            ft.Text(ref=target_file),
-        ],
-        alignment=ft.MainAxisAlignment.CENTER
-        ))
-
-        page.add(textbox_group)
-
+    #選択したデータ形式によってボタンの表示・非表示を行う処理
     def select_file_button(self, page: ft.Page):
         print(self.dropdown1.value)
         if self.dropdown1.value == "動画":
@@ -202,9 +125,18 @@ class GUI():
             self.button2.visible = False
         page.update()
 
+    #データ追加の終了時に，データベースに保存を行う処理
     def save_to_exit(self, page):
-        column_title = ["始まり", "終わり", "原文", "質問1", "質問2", "質問3", "データ元"]
+        column_title = ["始まり", "終わり", "原文", "質問1", "質問2", "質問3", "データ元", "ファイルパス"]
         if self.dropdown1.value == "動画":
+
+            #dataフォルダ配下に置いた形にパスを書き換え
+            video_path = "data\\\\" + os.path.basename(self.target_file.current.value)
+
+            #dtaaフォルダ配下に動画が無い場合，指定した動画ファイルをdataフォルダ上にコピー
+            if not os.path.exists(video_path):
+                shutil.copy2(self.target_file.current.value, "data")
+
             save_data = [
                 self.textbox5_p.value,
                 self.textbox6_p.value,
@@ -212,7 +144,8 @@ class GUI():
                 self.textbox2_p.value,
                 self.textbox3_p.value,
                 self.textbox4_p.value,
-                self.dropdown1.value
+                self.dropdown1.value,
+                "data\\\\" + os.path.basename(self.target_file.current.value)
                 ]
         else:
             save_data = [
@@ -222,17 +155,19 @@ class GUI():
                 self.textbox2_p.value,
                 self.textbox3_p.value,
                 self.textbox4_p.value,
-                self.dropdown1.value
+                self.dropdown1.value,
+                ""
                 ]
 
         self.excel_io.save_data_to_last_row(save_data)
 
         self.page_main(page)
 
+    #データベースに詳細なデータ追加を行うページのウィジェットを定義
     def page_sub2(self, page):
         def on_file_picked(e: ft.FilePickerResultEvent):
             if e.files:
-                target_file.current.value = e.files[0].path
+                self.target_file.current.value = e.files[0].path
                 page.update()
 
         def show_file_picker(_: ft.ControlEvent):
@@ -242,7 +177,8 @@ class GUI():
                 allowed_extensions=image_extensions
             )
 
-        target_file = ft.Ref[ft.Text]()
+        self.files_current_path = ""
+        self.target_file = ft.Ref[ft.Text]()
         image_extensions = ["mp4", "MTS"]
         file_picker = ft.FilePicker(on_result=on_file_picked)
         page.overlay.append(file_picker)
@@ -250,7 +186,9 @@ class GUI():
         page.controls.clear()
         self.create_menubar(page)
         self.text1 = ft.Text("回答データベース", size=22)
-        self.text_a = ft.Container(ft.Text("※必須の入力項目です", size=14, color="red"), padding=0, alignment=ft.alignment.center_left, width=800)
+
+        #「※必須の入力項目です」と表示するために用意したが，不必要になったので空文字を与えている
+        self.text_a = ft.Container(ft.Text("", size=14, color="red"), padding=0, alignment=ft.alignment.center_left, width=800)
 
         self.textbox1_p = ft.TextField(label="回答文", width=self.width)
         self.textbox2_p = ft.TextField(label="質問文1", width=self.width)
@@ -267,7 +205,7 @@ class GUI():
         self.textbox5 = ft.Container(self.textbox5_p, alignment=ft.alignment.center, width=100)
         self.textbox6 = ft.Container(self.textbox6_p, alignment=ft.alignment.center, width=100)
 
-        text_sentence = "※質問文を増やすほど、回答の精度がより高くなります。"
+        text_sentence = "質問文を増やすほど、回答の精度がより高くなります。"
         self.text2 = ft.Container(ft.Text(text_sentence, size=20, color="red"), padding=0, alignment=ft.alignment.center_left, width=800)
 
         self.button1 = ft.Container(
@@ -312,36 +250,40 @@ class GUI():
             self.textbox6,
             self.dropdown1,
             self.button2,
-            ft.Text(ref=target_file),
+            ft.Text(ref=self.target_file),
         ],
         alignment=ft.MainAxisAlignment.CENTER
         ))
 
         page.add(textbox_group)
 
+    #データベース上にあるデータを閲覧するページの定義
     def page_sub3(self, page):
         page.controls.clear()
         self.create_menubar(page)
         page.add(ft.Row([self.menubar]))
 
         #Excelからデータを取得し、横幅を設定
-        headers = ["開始秒数", "終了秒数", "回答文", "質問文1", "質問文2", "質問文3", "データ形式"]
+        headers = ["開始秒数", "終了秒数", "回答文", "質問文1", "質問文2", "質問文3", "データ形式", "ファイルパス"]
         rows = self.excel_io.all_data_to_list()
-        column_widths = [50, 50, 450, 300, 300, 300, 50]
+        column_widths = [50, 50, 450, 300, 300, 280, 50, 100]
 
         #float('nan')を削除
         for i in range(len(rows)):
             for j in range(len(rows[0])):
                 if type(rows[i][j]) is float:
-                    rows[i][j] = ""
+                    if np.isnan(rows[i][j]):
+                        rows[i][j] = ""
 
         data_table = FixedHeaderDataTable(headers, rows, column_widths)
         page.add(data_table)
 
+    #ページ変更時に，一旦ウィジェットを削除して変更先ページのウィジェットを配置する処理
     def page_list(self, page):
         page.controls.clear()
         self.create_menubar(page)
 
+    #音声認識機能
     def import_speech(self, e):
         self.text1.value = "話してください…"
         self.button1.text = "　"
@@ -367,6 +309,7 @@ class GUI():
         self.inputted_text = speech
         self.search_database()
 
+    #メニューバーの定義を行っている
     def create_menubar(self, page):
         def go_to_sub1(e):
             page.go("/sub1")
@@ -401,16 +344,16 @@ class GUI():
                             style=ft.ButtonStyle(
                                 bgcolor={ft.ControlState.HOVERED: ft.colors.GREEN_100}
                             ),
-                            on_click=lambda e: self.page_sub1(page),
-                        ),
-                        ft.MenuItemButton(
-                            content=ft.Text("データの追加-詳細モード"),
-                            #leading=ft.Icon(ft.icons.INFO),
-                            style=ft.ButtonStyle(
-                                bgcolor={ft.ControlState.HOVERED: ft.colors.GREEN_100}
-                            ),
                             on_click=lambda e: self.page_sub2(page),
                         ),
+                        #ft.MenuItemButton(
+                        #    content=ft.Text("データの追加-詳細モード"),
+                        #    #leading=ft.Icon(ft.icons.INFO),
+                        #    style=ft.ButtonStyle(
+                        #        bgcolor={ft.ControlState.HOVERED: ft.colors.GREEN_100}
+                        #    ),
+                        #    on_click=lambda e: self.page_sub2(page),
+                        #),
                         ft.MenuItemButton(
                             content=ft.Text("質問テンプレート"),
                             #leading=ft.Icon(ft.icons.INFO),
@@ -460,6 +403,7 @@ class GUI():
             ],
         )
 
+    #データベース上から類似度の高いものを取得する関数．数個程度候補を表示できるようにするのもいいかもしれない
     def search_database(self):
         if self.inputted_text == "None":
             self.text1.value = "質問を入力してください"
@@ -532,7 +476,7 @@ class GUI():
         pym.music.load("data/00617.mp3")
         pym.music.play(loops=-1, start=self.video_time[0])
 
-    # 動画再生関数
+    # 動画再生
     def play_video(self):
         #動画の再生秒数にシーク
         start_frame = int(self.video_time[0] * self.fps)
@@ -589,9 +533,9 @@ class GUI():
 
         return data.decode('utf-8')
 
-
+#データベース内のデータ表示を行えるpage_sub3上で用いてるドロップダウン表示の実装．
+#ドロップダウン上からデータの上書きや削除を行えたらより良いかも
 class FixedHeaderDataTable(ft.Column):
-
     def __init__(self, headers, rows, column_widths):
         super().__init__()
         self.headers = headers

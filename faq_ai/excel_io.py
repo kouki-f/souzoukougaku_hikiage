@@ -29,6 +29,7 @@ class ImportData():
         self.df.loc[last_row_index, "質問2"] = data[4]
         self.df.loc[last_row_index, "質問3"] = data[5]
         self.df.loc[last_row_index, "データ元"] = data[6]
+        self.df.loc[last_row_index, "ファイルパス"] = data[7]
 
         # Excelファイルに上書き保存
         self.df.to_excel(self.data_path, sheet_name=self.sheet_name, index=False)
