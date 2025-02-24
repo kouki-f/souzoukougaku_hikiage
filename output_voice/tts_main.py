@@ -32,7 +32,7 @@ def main(output_text):
 
     #生成した音声の保存、再生
     sr, audio = model.infer(text=output_text)
-    write(file="playback.wav", data=audio, samplerate=sr)
+    write(file="data/voice/pb_.wav", data=audio, samplerate=sr)
     #playsound("playback.wav")
 
 if __name__ == '__main__':

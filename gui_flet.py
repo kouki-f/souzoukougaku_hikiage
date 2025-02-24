@@ -8,6 +8,7 @@ import time
 from PIL import Image
 import io
 import base64
+import threading
 
 class GUI():
     def __init__(self):
@@ -17,7 +18,7 @@ class GUI():
         self.inputted_text = ""
         self.width = 800
 
-        self.excel_io = excel_io.ImportData("data/question_test2.xlsx", "Sheet1")
+        self.excel_io = excel_io.ImportData("data/question_test3.xlsx", "sheet1")
 
         #cv2で動画を読み込む
         self.video_path = "data/00617.mp4"
@@ -56,7 +57,7 @@ class GUI():
                                     height=300,
                                     width=500,
                                     opacity=0.0,
-                                    on_click=self.video_start
+                                    on_click=self.search
                                     )
         self.image_display = ft.Image(width=self.width, height=400, fit=ft.ImageFit.COVER)
 
@@ -126,7 +127,7 @@ class GUI():
 
         page.controls.clear()
         self.create_menubar(page)
-        self.text1 = ft.Text("Excelにデータを追加", size=22)
+        self.text1 = ft.Text("回答データベース", size=22)
         self.text_a = ft.Container(ft.Text("※必須の入力項目です", size=14, color="red"), padding=0, alignment=ft.alignment.center_left, width=800)
 
         self.textbox1_p = ft.TextField(label="回答文", width=self.width)
@@ -135,7 +136,7 @@ class GUI():
         self.textbox4_p = ft.TextField(label="質問文3", width=self.width)
 
         #エラー対策で変数だけ作っとく
-        self.textbox5_p = ft.TextField(label="開始秒数", width=self.width)
+        self.textbox5_p = ft.TextField(label="ファイル名", width=self.width)
         self.textbox6_p = ft.TextField(label="終了秒数", width=self.width)
 
         self.textbox1 = ft.Container(self.textbox1_p, padding=ft.Padding(0, 20, 0, 0), alignment=ft.alignment.center)
@@ -203,18 +204,28 @@ class GUI():
 
     def save_to_exit(self, page):
         column_title = ["始まり", "終わり", "原文", "質問1", "質問2", "質問3", "データ元"]
-        save_data = [
-            self.textbox5_p.value,
-            self.textbox6_p.value,
-            self.textbox1_p.value,
-            self.textbox2_p.value,
-            self.textbox3_p.value,
-            self.textbox4_p.value,
-            self.dropdown1.value
-            ]
+        if self.dropdown1.value == "動画":
+            save_data = [
+                self.textbox5_p.value,
+                self.textbox6_p.value,
+                self.textbox1_p.value,
+                self.textbox2_p.value,
+                self.textbox3_p.value,
+                self.textbox4_p.value,
+                self.dropdown1.value
+                ]
+        else:
+            save_data = [
+                self.textbox5_p.value,
+                self.textbox6_p.value,
+                self.textbox1_p.value,
+                self.textbox2_p.value,
+                self.textbox3_p.value,
+                self.textbox4_p.value,
+                self.dropdown1.value
+                ]
 
-        for i in range(len(column_title)):
-            self.excel_io.save_data_to_last_row(save_data[i], column_title[i])
+        self.excel_io.save_data_to_last_row(save_data)
 
         self.page_main(page)
 
@@ -238,7 +249,7 @@ class GUI():
 
         page.controls.clear()
         self.create_menubar(page)
-        self.text1 = ft.Text("Excelにデータを追加", size=22)
+        self.text1 = ft.Text("回答データベース", size=22)
         self.text_a = ft.Container(ft.Text("※必須の入力項目です", size=14, color="red"), padding=0, alignment=ft.alignment.center_left, width=800)
 
         self.textbox1_p = ft.TextField(label="回答文", width=self.width)
@@ -315,7 +326,7 @@ class GUI():
 
         #Excelからデータを取得し、横幅を設定
         headers = ["開始秒数", "終了秒数", "回答文", "質問文1", "質問文2", "質問文3", "データ形式"]
-        rows = sorted(self.excel_io.all_data_to_list(), key=lambda x: x[0])
+        rows = self.excel_io.all_data_to_list()
         column_widths = [50, 50, 450, 300, 300, 300, 50]
 
         #float('nan')を削除
@@ -460,23 +471,28 @@ class GUI():
 
         print(search_ans(self.inputted_text))
         [value, similarity, ans, self.video_time] = search_ans(self.inputted_text)
-        if not value:
-            return
-        if similarity > 0.9:
+        if similarity > 0.85:
             self.ans_list = list(ans)
             self.text2.text = "　"
             self.text2.update()
             print(self.inputted_text, self.video_time)
-            self.fps = self.cap.get(cv2.CAP_PROP_FPS)
 
-            #動画の再生開始
-            self.video_start(None)
+            self.button2.text = "検索"
+            self.button2.update()
+
+            if value:
+                self.fps = self.cap.get(cv2.CAP_PROP_FPS)
+
+                #動画の再生開始
+                self.video_start(None)
+
+            else:
+                self.play_text_sound()
+
 
         else:
             self.text2.value = "検索結果が見つかりませんでした。"
-        self.button2.text = "検索"
         self.text2.update()
-        self.button2.update()
 
     #動画の再生準備を行う
     def video_start(self, e):
@@ -492,6 +508,23 @@ class GUI():
     def search(self, e):
         self.inputted_text = self.textbox_text.value
         self.search_database()
+
+    def play_text_sound(self):
+        self.ans_charactor = ""
+        thread1 = threading.Thread(target=self.play_mixsound)
+        thread1.start()
+        sleep_time = self.video_time[1] / len(self.ans_list)
+
+        for i in range(len(self.ans_list)):
+            self.ans_charactor += self.ans_list[i]
+            self.text2.value = self.ans_charactor
+            self.text2.update()
+            time.sleep(sleep_time)
+
+    def play_mixsound(self):
+        #playsound(self.video_time[0])
+        return
+
 
     #音声再生
     def play_sound(self):

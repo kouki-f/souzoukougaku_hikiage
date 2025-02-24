@@ -17,12 +17,18 @@ class ImportData():
         self.df.to_excel(self.data_path, sheet_name=self.sheet_name, index=False)
 
     # 最終行にデータを追加するメソッド
-    def save_data_to_last_row(self, data, column_name):
+    def save_data_to_last_row(self, data):
         # 現在の最終行のインデックスを取得（データが存在する行の数）
         last_row_index = len(self.df)
 
         # 新しい行を作成してデータを挿入
-        self.df.loc[last_row_index, column_name] = data
+        self.df.loc[last_row_index, "始まり"] = data[0]
+        self.df.loc[last_row_index, "終わり"] = data[1]
+        self.df.loc[last_row_index, "原文"] = data[2]
+        self.df.loc[last_row_index, "質問1"] = data[3]
+        self.df.loc[last_row_index, "質問2"] = data[4]
+        self.df.loc[last_row_index, "質問3"] = data[5]
+        self.df.loc[last_row_index, "データ元"] = data[6]
 
         # Excelファイルに上書き保存
         self.df.to_excel(self.data_path, sheet_name=self.sheet_name, index=False)
@@ -43,5 +49,5 @@ class ImportData():
         return self.df.values.tolist()
     
 
-# data = ImportData("data/question_test.xlsx", "sheet1")
+# data = ImportData("data/question_test3.xlsx", "sheet1")
 # print(data.all_data_to_list())
