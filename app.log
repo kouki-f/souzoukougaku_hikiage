@@ -1,0 +1,7 @@
+03-19 22:46:56 |  INFO  | bert_models.py:92 | ku-nlp/deberta-v2-large-japanese-char-wwm の JP BERT modelを読み込みました
+03-19 22:46:57 |  INFO  | bert_models.py:155 | ku-nlp/deberta-v2-large-japanese-char-wwm の JP BERTトークン化プログラム を読み込みました
+03-19 22:46:57 |  INFO  | tts_model.py:258 | 以下のテキストから音声データの生成を開始します:
+a
+03-19 22:46:57 |  INFO  | infer.py:24 | JP-Extra modelを使用
+03-19 22:46:59 |  INFO  | safetensors.py:55 | 'model_assets\yasuda\yasuda_e100_s3462.safetensors' (iteration 100) を読み込みました
+03-19 22:47:12 |  INFO  | tts_model.py:325 | 音声データの生成が完了しました

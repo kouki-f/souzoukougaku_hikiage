@@ -1,8 +1,9 @@
 from voice_stt.run import SpeechRecognizer as sp
 from faq_ai.faq_ai_main import search_ans
-from pygame import mixer as pym
 from moviepy.editor import AudioFileClip
+from tts_generate import main_thread
 import faq_ai.excel_io as excel_io
+from pydub import AudioSegment
 import numpy as np
 import cv2
 import flet as ft
@@ -13,8 +14,28 @@ import base64
 import threading
 import shutil
 import os
+import sys
+
+#pygameのウェルカムメッセージを非表示
+os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
+from pygame import mixer as pym
 
 class GUI():
+    class StdoutRedirector:
+        """標準出力を指定されたTextウィジェットにリダイレクトするクラス"""
+        def __init__(self, text_widget: ft.Text):
+            self.text_widget = text_widget
+
+        def write(self, message: str):
+            """標準出力に書き込まれた内容をTextウィジェットに追加する"""
+            self.text_widget.value += message
+            if '\n' in message and self.text_widget.page:
+                # 改行が含まれる場合はTextウィジェットを更新
+                self.text_widget.update()
+
+        def flush(self):
+            pass
+
     #ウィンドウの初期設定などを与え，mainで実行している
     def __init__(self):
         self.speech = sp()
@@ -22,6 +43,8 @@ class GUI():
         self.play_run = 0
         self.inputted_text = ""
         self.width = 800
+        self.pagenum = 1 #今どのページを開いているかを格納
+        self.video_playing = False #動画再生中に再生処理を行うとバグってクラッシュするので，それの保護用の変数
 
         self.excel_io = excel_io.ImportData("data/question_test3.xlsx", "sheet1")
 
@@ -45,6 +68,7 @@ class GUI():
 
     #実際に質問回答を行うページのウィジェットを定義
     def page_main(self, page):
+        self.pagenum = 1
         page.controls.clear()
         self.create_menubar(page)
         self.text1 = ft.Text("  ", size=22)
@@ -102,24 +126,31 @@ class GUI():
         page.add(ft.Row([container2], alignment=ft.MainAxisAlignment.CENTER))
 
         #画面幅に応じてテキストの表示幅を変更
-        def on_resized(e):
-            if not page.window.width >= self.width:
-                container2.width = page.window.width - 20
-            else:
-                container2.width = self.width - 20
-            container2.update()
-        page.on_resized = on_resized
+        def on_resize(e):
+            if self.pagenum == 1:
+                if not page.window.width >= self.width:
+                    container2.width = page.window.width - 20
+                else:
+                    container2.width = self.width - 20
+                container2.update()
+
+        page.on_resized = on_resize
 
         #画像を設定
         self.video_to_image()
 
     #選択したデータ形式によってボタンの表示・非表示を行う処理
     def select_file_button(self, page: ft.Page):
-        print(self.dropdown1.value)
         if self.dropdown1.value == "動画":
             self.button2.visible = True
+            self.console.visible = False
+            self.textbox5.visible = True
+            self.textbox6.visible = True
         else:
             self.button2.visible = False
+            self.console.visible = True
+            self.textbox5.visible = False
+            self.textbox6.visible = False
         page.update()
 
     #データ追加の終了時に，データベースに保存を行う処理
@@ -149,15 +180,24 @@ class GUI():
                 "data\\\\" + os.path.basename(self.target_file.current.value)
                 ]
         else:
+            #合成音声の生成
+            filenum = main_thread(self.textbox1_p.value)
+            #生成した合成音声のパスを作成
+            sound_path = "data\\\\voice\\\\" + f"pb_{filenum}.wav"
+
+            #合成音声の再生秒数を取得
+            sound_data = AudioSegment.from_file(sound_path, "wav")
+            sound_time = round(sound_data.duration_seconds, 1)
+
             save_data = [
-                self.textbox5_p.value,
-                self.textbox6_p.value,
+                np.nan,
+                sound_time,
                 self.textbox1_p.value,
                 self.textbox2_p.value,
                 self.textbox3_p.value,
                 self.textbox4_p.value,
                 self.dropdown1.value,
-                ""
+                sound_path
                 ]
 
         self.excel_io.save_data_to_last_row(save_data)
@@ -166,6 +206,7 @@ class GUI():
 
     #データベースに詳細なデータ追加を行うページのウィジェットを定義
     def page_sub2(self, page):
+        self.pagenum = 2
         def on_file_picked(e: ft.FilePickerResultEvent):
             if e.files:
                 self.target_file.current.value = e.files[0].path
@@ -178,6 +219,10 @@ class GUI():
                 allowed_extensions=image_extensions
             )
 
+        def close(self):
+            """標準出力を元の状態に戻す"""
+            sys.stdout = self.original_stdout
+
         self.files_current_path = ""
         self.target_file = ft.Ref[ft.Text]()
         image_extensions = ["mp4", "MTS"]
@@ -188,8 +233,11 @@ class GUI():
         self.create_menubar(page)
         self.text1 = ft.Text("回答データベース", size=22)
 
-        #「※必須の入力項目です」と表示するために用意したが，不必要になったので空文字を与えている
-        self.text_a = ft.Container(ft.Text("", size=14, color="red"), padding=0, alignment=ft.alignment.center_left, width=800)
+        #「※必須の入力項目です」と表示するために用意したが，不必要になったのでサイズ0の空文字を与えている
+        self.text_a = ft.Container(ft.Text("", size=0, color="red"), padding=0, alignment=ft.alignment.center_left, width=800)
+
+        # コンソール出力を表示するTextウィジェット
+        self.output = ft.Text(value="", selectable=True)
 
         self.textbox1_p = ft.TextField(label="回答文", width=self.width)
         self.textbox2_p = ft.TextField(label="質問文1", width=self.width)
@@ -201,10 +249,16 @@ class GUI():
         self.textbox1 = ft.Container(self.textbox1_p, padding=ft.Padding(0, 20, 0, 0), alignment=ft.alignment.center)
         self.textbox2 = ft.Container(self.textbox2_p, padding=ft.Padding(0, 50, 0, 0), alignment=ft.alignment.center)
         self.textbox3 = ft.Container(self.textbox3_p, padding=ft.Padding(0, 15, 0, 0), alignment=ft.alignment.center)
-        self.textbox4 = ft.Container(self.textbox4_p, padding=ft.Padding(0, 39, 0, 20), alignment=ft.alignment.center)
+        self.textbox4 = ft.Container(self.textbox4_p, padding=ft.Padding(0, 15, 0, 20), alignment=ft.alignment.center)
 
         self.textbox5 = ft.Container(self.textbox5_p, alignment=ft.alignment.center, width=100)
         self.textbox6 = ft.Container(self.textbox6_p, alignment=ft.alignment.center, width=100)
+
+        # Textウィジェットを囲むContainerウィジェット
+        self.console = ft.Container(self.output, border=ft.border.all(2, ft.Colors.GREY_500), padding=10, width=self.width)
+        self.console.visible = False
+        #コンソール表示は初期状態で非表示．
+        #文字データ入力時にのみ表示を行う．
 
         text_sentence = "質問文を増やすほど、回答の精度がより高くなります。"
         self.text2 = ft.Container(ft.Text(text_sentence, size=20, color="red"), padding=0, alignment=ft.alignment.center_left, width=800)
@@ -239,12 +293,18 @@ class GUI():
                 self.textbox3,
                 self.textbox4,
                 self.text2,
+                self.console,
                 self.button1],
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 alignment=ft.MainAxisAlignment.CENTER)
 
         page.add(ft.Row([self.menubar]))
         page.add(ft.Row([self.text1], alignment=ft.MainAxisAlignment.CENTER))
+
+        # 標準出力の元の状態を保存
+        self.original_stdout = sys.stdout
+        # 標準出力をリダイレクト
+        sys.stdout = self.StdoutRedirector(self.output)
 
         page.add(ft.Row(controls=[
             self.textbox5,
@@ -260,6 +320,7 @@ class GUI():
 
     #データベース上にあるデータを閲覧するページの定義
     def page_sub3(self, page):
+        self.pagenum = 3
         page.controls.clear()
         self.create_menubar(page)
         page.add(ft.Row([self.menubar]))
@@ -335,7 +396,7 @@ class GUI():
                             content=ft.Text("メイン画面"),
                             #leading=ft.Icon(ft.icons.INFO),
                             style=ft.ButtonStyle(
-                                bgcolor={ft.ControlState.HOVERED: ft.colors.GREEN_100}
+                                bgcolor={ft.ControlState.HOVERED: ft.Colors.GREEN_100}
                             ),
                             on_click=lambda e: self.page_main(page),
                         ),
@@ -343,7 +404,7 @@ class GUI():
                             content=ft.Text("データの追加"),
                             #leading=ft.Icon(ft.icons.CLOSE),
                             style=ft.ButtonStyle(
-                                bgcolor={ft.ControlState.HOVERED: ft.colors.GREEN_100}
+                                bgcolor={ft.ControlState.HOVERED: ft.Colors.GREEN_100}
                             ),
                             on_click=lambda e: self.page_sub2(page),
                         ),
@@ -359,7 +420,7 @@ class GUI():
                             content=ft.Text("質問テンプレート"),
                             #leading=ft.Icon(ft.icons.INFO),
                             style=ft.ButtonStyle(
-                                bgcolor={ft.ControlState.HOVERED: ft.colors.GREEN_100}
+                                bgcolor={ft.ControlState.HOVERED: ft.Colors.GREEN_100}
                             ),
                             on_click=lambda e: self.page_sub3(page),
                         ),
@@ -377,22 +438,22 @@ class GUI():
                             controls=[
                                 ft.MenuItemButton(
                                     content=ft.Text("Magnify"),
-                                    leading=ft.Icon(ft.icons.ZOOM_IN),
+                                    leading=ft.Icon(ft.Icons.ZOOM_IN),
                                     close_on_click=False,
                                     style=ft.ButtonStyle(
                                         bgcolor={
-                                            ft.ControlState.HOVERED: ft.colors.PURPLE_200
+                                            ft.ControlState.HOVERED: ft.Colors.PURPLE_200
                                         }
                                     ),
                                     #on_click=handle_menu_item_click,
                                 ),
                                 ft.MenuItemButton(
                                     content=ft.Text("Minify"),
-                                    leading=ft.Icon(ft.icons.ZOOM_OUT),
+                                    leading=ft.Icon(ft.Icons.ZOOM_OUT),
                                     close_on_click=False,
                                     style=ft.ButtonStyle(
                                         bgcolor={
-                                            ft.ControlState.HOVERED: ft.colors.PURPLE_200
+                                            ft.ControlState.HOVERED: ft.Colors.PURPLE_200
                                         }
                                     ),
                                     #on_click=handle_menu_item_click,
@@ -443,6 +504,7 @@ class GUI():
                 self.video_start(None)
 
             else:
+                self.sound_path = path
                 self.play_text_sound()
 
 
@@ -455,6 +517,7 @@ class GUI():
         self.loop_num = 0
         self.loop_len = 0
         self.ans_charactor = ""
+        self.video_playing = True
         self.exit_flag = True
         self.left_time = time.time()
         self.play_sound()
@@ -462,9 +525,11 @@ class GUI():
 
     #テキストボックス入力後の検索時に関数に値を入れるために経由
     def search(self, e):
-        self.inputted_text = self.textbox_text.value
-        self.search_database()
+        if not self.video_playing:
+            self.inputted_text = self.textbox_text.value
+            self.search_database()
 
+    #文字データの再生準備
     def play_text_sound(self):
         self.ans_charactor = ""
         thread1 = threading.Thread(target=self.play_mixsound)
@@ -477,16 +542,17 @@ class GUI():
             self.text2.update()
             time.sleep(sleep_time)
 
+    #音声再生（シーク無）
     def play_mixsound(self):
-        #playsound(self.video_time[0])
-        return
+        pym.init()
+        pym.music.load(self.sound_path)
+        pym.music.play(loops=0, start=0)
 
-
-    #音声再生
+    #音声再生（シーク有）
     def play_sound(self):
         pym.init()
         pym.music.load(self.sound_path)
-        pym.music.play(loops=-1, start=self.video_time[0])
+        pym.music.play(loops=0, start=self.video_time[0])
 
     # 動画再生
     def play_video(self):
@@ -531,6 +597,7 @@ class GUI():
             if time.time() - self.left_time >= self.video_time[1] - self.video_time[0]:
                 self.video_to_image()
                 pym.music.stop()
+                self.video_playing = False
 
     #再生停止
     def video_to_image(self):
@@ -557,7 +624,7 @@ class FixedHeaderDataTable(ft.Column):
 
         # ヘッダ部の作成
         header_controls = [
-            ft.Container(ft.Text(header, weight=ft.FontWeight.BOLD), width=width, alignment=ft.alignment.center, bgcolor=ft.colors.GREY_200) \
+            ft.Container(ft.Text(header, weight=ft.FontWeight.BOLD), width=width, alignment=ft.alignment.center, bgcolor=ft.Colors.GREY_200) \
                 for header, width in zip(self.headers, self.column_widths)
         ]
         header_row = ft.Row(header_controls, alignment=ft.alignment.center, height=50)
