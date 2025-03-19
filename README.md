@@ -5,21 +5,23 @@
 Releasesより最新版のインストーラをダウンロードし，手順に従うことでアプリをインストールできます．  
 
 ## プログラムの利用方法
-https://github.com/ramsrigouthamg/Questgen.ai  
-https://github.com/kouki-f/souzoukougaku_hikiage/blob/main/output_voice/howtorun.md  
+- https://github.com/ramsrigouthamg/Questgen.ai  
+- https://github.com/kouki-f/souzoukougaku_hikiage/blob/main/output_voice/howtorun.md  
 上記のリポジトリ内のREADMEを参考にして環境構築を行う必要がある.  
 
-https://drive.google.com/drive/folders/1NnLnkQbxN02Wfk9rjcqQAtzYwNqDUizr?usp=sharing  
+- https://drive.google.com/drive/folders/1NnLnkQbxN02Wfk9rjcqQAtzYwNqDUizr?usp=sharing  
 容量が大きくgithubに上げられなかったファイルはリンク内のGDriveに残している．  
-「ja_core_news_md」ファイルは「_internal」フォルダに格納する．  
-「00617.mp4」ファイルは「data」フォルダに格納する．  
-「style_bert_vits2」フォルダは，pythonのライブラリを纏めているフォルダ内に入れる．  
+
+-「ja_core_news_md」ファイルは「_internal」フォルダに格納する．  
+-「00617.mp4」ファイルは「data」フォルダに格納する．  
+-「style_bert_vits2」フォルダは，pythonのライブラリを纏めているフォルダ内に入れる． 
+
 Microsoft Store版のPythonを用いている場合，以下のディレクトリに入れれば動くと思う．  
-C:\Users\{ユーザー名}\AppData\Local\Packages\PythonSoftwareFoundation\Python311_{ランダムな英数字列}\LocalCache\local-packages
+- C:\Users\{ユーザー名}\AppData\Local\Packages\PythonSoftwareFoundation\Python311_{ランダムな英数字列}\LocalCache\local-packages
 
 
+## 注意点など
 gui_flet.pyを実行することでプログラムが開始する．  
-data/ 配下に00617.mp4を配置する必要がある。動画ファイルはGoogleDrive上にあるので要参照。  
 pygameライブラリはv2.4.0でないとランタイムエラーが発生する。  
 python3.11を使用して開発を行った．その他のバージョンだと互換性の問題で動作しない事が多くあった．  
 
