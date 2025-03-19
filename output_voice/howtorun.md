@@ -18,17 +18,17 @@
 - style_vectors.npy  
 があることを確認する。  
 以下URLより「yasuda_e100_s3462.safetensors」ファイルをダウンロードし、同ディレクトリ上に配置を行う。  
-- https://drive.google.com/file/d/1aYRf36GNbVgU7Iw9vFcwE86wqgnqXodC/view?usp=sharing  
+- https://drive.google.com/drive/folders/1NnLnkQbxN02Wfk9rjcqQAtzYwNqDUizr?usp=sharing  
 
-その後、tts_main.pyをimportして、main関数に読み上げさせたい文章を与えることで、実行が出来る。  
+その後、tts_generate.pyをimportして、main関数に読み上げさせたい文章を与えることで、合成音声の生成が出来る。  
 「run.py」にサンプルコードを記述する。  
   
 **注意点**  
-- tts_main.py 29行目のdevice変数に与えるものとして、  
+- tts_generate.py 29行目のdevice変数に与えるものとして、  
 CPUで処理させる場合は"cpu"  
-GPUで処理させる場合は"cuda"  
+NVIDIA GPUで処理させる場合は"cuda"  
 を与える。  
 
-- tts_main.pyのbert_models関数では、BERTモデルがない場合はモデルのダウンロードを行う。  
+- tts_generate.pyのbert_models関数では、BERTモデルがない場合はモデルのダウンロードを行う。  
 一度も実行したことが無い場合はBERTモデルがまだ無いため、初回実行時のみ動作時間が長くなる。  
-また、同じ理由によりモバイル回線での実行には注意が必要。  
+また、同じ理由によりモバイル回線など従量課金制回線での実行には注意が必要。  
