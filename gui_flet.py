@@ -1,18 +1,19 @@
 from voice_stt.run import SpeechRecognizer as sp
 from faq_ai.faq_ai_main import search_ans
-from moviepy.editor import AudioFileClip
+from moviepy.editor import AudioFileClip #動画から音声抽出したいだけ
 from tts_generate import main_thread
 import faq_ai.excel_io as excel_io
-from pydub import AudioSegment
-import numpy as np
+from pydub import AudioSegment #音声の再生秒数を取得したいだけ
+from numpy import nan #nan置きたいだけ
+from numpy import isnan #nan判定したいだけ
 import cv2
 import flet as ft
 import time
-from PIL import Image
-import io
-import base64
+from PIL import Image #PIL画像に変換したいだけ
+import io #PIL画像をバイナリに変換したいだけ
+import base64 #バイナリをbase64に変換したいだけ
 import threading
-import shutil
+import shutil #ファイルをコピーしたいだけ
 import os
 import sys
 
@@ -48,18 +49,25 @@ class GUI():
 
         self.excel_io = excel_io.ImportData("data/question_test3.xlsx", "sheet1")
 
+        with open("data/play_movie3.jpg.b64", "r") as image_file:
+            self.base64_image_data = image_file.read()
+
     def main(self, page: ft.Page):
         #Ctrl+1,2,3でページ遷移が出来るキーボードイベントリスナを追加
         #なぜかmain関数内で関数を定義しないとエラー吐く
         def on_keyboard(e: ft.KeyboardEvent):
-            if e.shift and e.key == "1":
+            if e.ctrl and e.key == "1":
                 self.page_main(page)
-            if e.shift and e.key == "2":
+            if e.ctrl and e.key == "2":
                 self.page_sub2(page)
-            if e.shift and e.key == "3":
+            if e.ctrl and e.key == "3":
                 self.page_sub3(page)
-            if e.shift and e.key == "D":
-                self.inputted_reset(e.shift)
+            if e.ctrl and e.key == "D":
+                self.inputted_reset(e.ctrl)
+            if e.ctrl and e.key == "X":
+                self.import_speech(e.ctrl)
+            if e.key == "Enter":
+                self.search(e.key)
 
         page.on_keyboard_event = on_keyboard
 
@@ -85,10 +93,10 @@ class GUI():
         self.pagenum = 1
         page.controls.clear()
         self.create_menubar(page)
-        self.text1 = ft.Text("  ", size=22)
+        self.text1 = ft.Text("", size=22)
         self.text2 = ft.Text("字幕表示", size=22)
-        self.textbox_text = ft.TextField(label="質問を入力",on_submit=self.search ,width=self.width)
-        self.textbox = ft.Container(content = self.textbox_text, alignment=ft.alignment.center, width = self.width)
+        self.textbox_text = ft.TextField(label="質問を入力" ,width=self.width)
+        self.textbox = ft.Container(self.textbox_text, alignment=ft.alignment.center)
         self.button1 = ft.ElevatedButton(text="音声認識",
                                     width=150,
                                     on_click=self.import_speech
@@ -116,14 +124,15 @@ class GUI():
 
         container2 = ft.Container(
             content = self.button_set,
-            alignment=ft.alignment.top_center,
+            alignment=ft.alignment.center,
         )
 
         page.add(container2)
 
         page.add(ft.Row([self.textbox], alignment=ft.MainAxisAlignment.CENTER))
 
-        video_view = ft.Stack([container1,
+        video_view = ft.Stack([
+                        container1,
                         ft.Row([self.button3],
                                 height=350,
                                 alignment=ft.MainAxisAlignment.CENTER,
@@ -132,23 +141,7 @@ class GUI():
 
         page.add(video_view)
 
-        container2 = ft.Container(
-            content=self.text2,
-            width=self.width - 10,
-            alignment=ft.alignment.top_center
-        )
-        page.add(ft.Row([container2], alignment=ft.MainAxisAlignment.CENTER))
-
-        #画面幅に応じてテキストの表示幅を変更
-        def on_resize(e):
-            if self.pagenum == 1:
-                if not page.window.width >= self.width:
-                    container2.width = page.window.width - 20
-                else:
-                    container2.width = self.width - 20
-                container2.update()
-
-        page.on_resized = on_resize
+        page.add(ft.Row([self.text2], alignment=ft.MainAxisAlignment.CENTER))
 
         #画像を設定
         self.video_to_image()
@@ -204,7 +197,7 @@ class GUI():
             sound_time = round(sound_data.duration_seconds, 1)
 
             save_data = [
-                np.nan,
+                nan,
                 sound_time,
                 self.textbox1_p.value,
                 self.textbox2_p.value,
@@ -284,7 +277,7 @@ class GUI():
                 on_click=lambda e: self.save_to_exit(page)
                 ),
                 alignment=ft.alignment.center_right,
-                width=800,
+                width=800
             )
 
         self.dropdown1 = ft.Dropdown(
@@ -348,7 +341,7 @@ class GUI():
         for i in range(len(rows)):
             for j in range(len(rows[0])):
                 if type(rows[i][j]) is float:
-                    if np.isnan(rows[i][j]):
+                    if isnan(rows[i][j]):
                         rows[i][j] = ""
 
         data_table = FixedHeaderDataTable(headers, rows, column_widths)
@@ -370,6 +363,8 @@ class GUI():
 
     #音声認識機能
     def import_speech(self, e):
+        if not self.pagenum == 1:
+            return
         self.text1.value = "話してください…"
         self.button1.text = "　"
         self.text1.update()
@@ -445,15 +440,17 @@ class GUI():
                 ft.SubmenuButton(
                     content=ft.Text("表示"),
                     controls=[
-                        create_menu_item("メイン画面", "Shift+1", lambda e: self.page_main(page)),
-                        create_menu_item("データの追加", "Shift+2", lambda e: self.page_sub2(page)),
-                        create_menu_item("質問テンプレート", "Shift+3", lambda e: self.page_sub3(page)),
+                        create_menu_item("メイン画面", "Ctrl+1", lambda e: self.page_main(page)),
+                        create_menu_item("データの追加", "Ctrl+2", lambda e: self.page_sub2(page)),
+                        create_menu_item("質問テンプレート", "Ctrl+3", lambda e: self.page_sub3(page)),
                     ],
                 ),
                 ft.SubmenuButton(
                     content=ft.Text("編集"),
                     controls=[
-                        create_menu_item("入力をリセット", "Shift+D", self.inputted_reset),
+                        create_menu_item("入力をリセット", "Ctrl+D", self.inputted_reset),
+                        create_menu_item("音声認識", "Ctrl+X", self.import_speech),
+                        create_menu_item("検索・再生停止", "Enter", self.search),
                     ],
                 ),
             ],
@@ -518,7 +515,9 @@ class GUI():
 
     #テキストボックス入力後の検索時に関数に値を入れるために経由
     def search(self, e):
-        if not self.video_playing:
+        print(self.text1.value == "")
+        print(self.textbox_text.value)
+        if not self.video_playing and self.pagenum == 1:
             if self.text1.value == "":
                 self.inputted_text = self.textbox_text.value
             self.search_database()
@@ -596,16 +595,16 @@ class GUI():
     #再生停止
     def video_to_image(self):
         self.video_playing = False
-        self.image_display.src_base64 = self.image_file_to_base64("data/play_movie3.png")
+        self.image_display.src_base64 = self.base64_image_data
         self.image_display.update()
         pym.music.stop()
 
-    #画像を表示させる際、base64に変換しないと表示が更新されない
-    def image_file_to_base64(self, file_path):
-        with open(file_path, "rb") as image_file:
-            data = base64.b64encode(image_file.read())
-
-        return data.decode('utf-8')
+    #画像の生データではGUI上に表示できないので，予めbase64に変換した画像を読み込んでいる
+    #画像を表示させる度にエンコードしてもいいけど，一瞬エラーが表示されて気持ち悪い
+    def base64_image_load(self):
+        with open("data/play_movie3.png.b64", "r") as image_file:
+            data = image_file.read()
+        return data
 
 #データベース内のデータ表示を行えるpage_sub3上で用いてるドロップダウン表示の実装．
 #ドロップダウン上からデータの上書きや削除を行えたらより良いかも
