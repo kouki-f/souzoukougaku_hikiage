@@ -49,6 +49,20 @@ class GUI():
         self.excel_io = excel_io.ImportData("data/question_test3.xlsx", "sheet1")
 
     def main(self, page: ft.Page):
+        #Ctrl+1,2,3でページ遷移が出来るキーボードイベントリスナを追加
+        #なぜかmain関数内で関数を定義しないとエラー吐く
+        def on_keyboard(e: ft.KeyboardEvent):
+            if e.shift and e.key == "1":
+                self.page_main(page)
+            if e.shift and e.key == "2":
+                self.page_sub2(page)
+            if e.shift and e.key == "3":
+                self.page_sub3(page)
+            if e.shift and e.key == "D":
+                self.inputted_reset(e.shift)
+
+        page.on_keyboard_event = on_keyboard
+
         page.title = "抑留者データベース-安田"
 
         #テーマ色の変更が可能．デフォルトは白
@@ -73,7 +87,7 @@ class GUI():
         self.create_menubar(page)
         self.text1 = ft.Text("  ", size=22)
         self.text2 = ft.Text("字幕表示", size=22)
-        self.textbox_text = ft.TextField(label="質問を入力", width=self.width)
+        self.textbox_text = ft.TextField(label="質問を入力",on_submit=self.search ,width=self.width)
         self.textbox = ft.Container(content = self.textbox_text, alignment=ft.alignment.center, width = self.width)
         self.button1 = ft.ElevatedButton(text="音声認識",
                                     width=150,
@@ -274,7 +288,7 @@ class GUI():
             )
 
         self.dropdown1 = ft.Dropdown(
-        width=130,
+        width=150,
         label="データ形式",
             options=[
                 ft.dropdown.Option("動画"),
@@ -345,6 +359,15 @@ class GUI():
         page.controls.clear()
         self.create_menubar(page)
 
+    #音声認識や文字入力で入れた質問をクリアする関数
+    def inputted_reset(self, e):
+        print("a", self.pagenum)
+        if self.pagenum == 1:
+            self.text1.value = ""
+            self.textbox_text.value = ""
+            self.text1.update()
+            self.textbox_text.update()
+
     #音声認識機能
     def import_speech(self, e):
         self.text1.value = "話してください…"
@@ -369,97 +392,68 @@ class GUI():
 
         print(speech)
         self.inputted_text = speech
-        self.search_database()
+
+    def menu_item(text, shortcut, action):
+        """メニューアイテムを作成し、右側にショートカットキーを配置"""
+        return ft.MenuItemButton(
+            content=ft.Row(
+                controls=[
+                    ft.Text(text),
+                    ft.Text(shortcut, color=ft.colors.GREY)  # ショートカットキーを右揃え
+                ],
+                alignment=ft.MainAxisAlignment.SPACE_BETWEEN
+            ),
+            style=ft.ButtonStyle(
+                bgcolor={ft.ControlState.HOVERED: ft.Colors.GREEN_100}
+            ),
+            data=text,
+            on_click=action
+        )
+
+    def create_menu_item(self, text, shortcut, action):
+        """メニューアイテムを作成し、右揃えでショートカットキーを表示"""
+        return ft.MenuItemButton(
+            content=ft.Row(
+                controls=[
+                    ft.Text(text),
+                    ft.Text(shortcut, color=ft.Colors.GREY)  # ショートカットキーを右揃え
+                ],
+                alignment=ft.MainAxisAlignment.SPACE_BETWEEN
+            ),
+            on_click=action
+        )
 
     #メニューバーの定義を行っている
     def create_menubar(self, page):
-        def go_to_sub1(e):
-            page.go("/sub1")
+
+        def create_menu_item(text, shortcut, action):
+            """メニューアイテムを作成し、右揃えでショートカットキーを表示"""
+            return ft.MenuItemButton(
+                content=ft.Row(
+                    controls=[
+                        ft.Text(text),
+                        ft.Text(shortcut, color=ft.Colors.GREY)  # ショートカットキーを右揃え
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN
+                ),
+                on_click=action
+            )
 
         self.menubar = ft.MenuBar(
             expand=True,
-            style=ft.MenuStyle(
-                alignment=ft.alignment.top_center,
-                mouse_cursor={
-                    ft.ControlState.HOVERED: ft.MouseCursor.WAIT,
-                    ft.ControlState.DEFAULT: ft.MouseCursor.ZOOM_OUT,
-                }
-            ),
             controls=[
                 ft.SubmenuButton(
-                    content=ft.Text("機能"),
-                    #on_open=handle_submenu_open,
-                    #on_close=handle_submenu_close,
-                    #on_hover=handle_submenu_hover,
+                    content=ft.Text("表示"),
                     controls=[
-                        ft.MenuItemButton(
-                            content=ft.Text("メイン画面"),
-                            #leading=ft.Icon(ft.icons.INFO),
-                            style=ft.ButtonStyle(
-                                bgcolor={ft.ControlState.HOVERED: ft.Colors.GREEN_100}
-                            ),
-                            on_click=lambda e: self.page_main(page),
-                        ),
-                        ft.MenuItemButton(
-                            content=ft.Text("データの追加"),
-                            #leading=ft.Icon(ft.icons.CLOSE),
-                            style=ft.ButtonStyle(
-                                bgcolor={ft.ControlState.HOVERED: ft.Colors.GREEN_100}
-                            ),
-                            on_click=lambda e: self.page_sub2(page),
-                        ),
-                        #ft.MenuItemButton(
-                        #    content=ft.Text("データの追加-詳細モード"),
-                        #    #leading=ft.Icon(ft.icons.INFO),
-                        #    style=ft.ButtonStyle(
-                        #        bgcolor={ft.ControlState.HOVERED: ft.colors.GREEN_100}
-                        #    ),
-                        #    on_click=lambda e: self.page_sub2(page),
-                        #),
-                        ft.MenuItemButton(
-                            content=ft.Text("質問テンプレート"),
-                            #leading=ft.Icon(ft.icons.INFO),
-                            style=ft.ButtonStyle(
-                                bgcolor={ft.ControlState.HOVERED: ft.Colors.GREEN_100}
-                            ),
-                            on_click=lambda e: self.page_sub3(page),
-                        ),
+                        create_menu_item("メイン画面", "Shift+1", lambda e: self.page_main(page)),
+                        create_menu_item("データの追加", "Shift+2", lambda e: self.page_sub2(page)),
+                        create_menu_item("質問テンプレート", "Shift+3", lambda e: self.page_sub3(page)),
                     ],
                 ),
-                #"""
                 ft.SubmenuButton(
-                    content=ft.Text(" "),
-                    #on_open=handle_submenu_open,
-                    #on_close=handle_submenu_close,
-                    #on_hover=handle_submenu_hover,
+                    content=ft.Text("編集"),
                     controls=[
-                        ft.SubmenuButton(
-                            content=ft.Text("Zoom"),
-                            controls=[
-                                ft.MenuItemButton(
-                                    content=ft.Text("Magnify"),
-                                    leading=ft.Icon(ft.Icons.ZOOM_IN),
-                                    close_on_click=False,
-                                    style=ft.ButtonStyle(
-                                        bgcolor={
-                                            ft.ControlState.HOVERED: ft.Colors.PURPLE_200
-                                        }
-                                    ),
-                                    #on_click=handle_menu_item_click,
-                                ),
-                                ft.MenuItemButton(
-                                    content=ft.Text("Minify"),
-                                    leading=ft.Icon(ft.Icons.ZOOM_OUT),
-                                    close_on_click=False,
-                                    style=ft.ButtonStyle(
-                                        bgcolor={
-                                            ft.ControlState.HOVERED: ft.Colors.PURPLE_200
-                                        }
-                                    ),
-                                    #on_click=handle_menu_item_click,
-                                ),
-                            ],
-                        )
+                        create_menu_item("入力をリセット", "Shift+D", self.inputted_reset),
                     ],
                 ),
             ],
@@ -491,9 +485,6 @@ class GUI():
 
             self.sound_path = self.change_extension(path, "mp3") #拡張子名をmp3に変更
 
-            self.button2.text = "検索"
-            self.button2.update()
-
             if value:
                 #cv2で動画を読み込む
                 self.video_path = path
@@ -510,6 +501,9 @@ class GUI():
 
         else:
             self.text2.value = "検索結果が見つかりませんでした。"
+
+        self.button2.text = "検索"
+        self.button2.update()
         self.text2.update()
 
     #動画の再生準備を行う
@@ -518,7 +512,6 @@ class GUI():
         self.loop_len = 0
         self.ans_charactor = ""
         self.video_playing = True
-        self.exit_flag = True
         self.left_time = time.time()
         self.play_sound()
         self.play_video()
@@ -526,8 +519,11 @@ class GUI():
     #テキストボックス入力後の検索時に関数に値を入れるために経由
     def search(self, e):
         if not self.video_playing:
-            self.inputted_text = self.textbox_text.value
+            if self.text1.value == "":
+                self.inputted_text = self.textbox_text.value
             self.search_database()
+        else:
+            self.video_to_image()
 
     #文字データの再生準備
     def play_text_sound(self):
@@ -561,7 +557,7 @@ class GUI():
         self.cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
 
         #動画が終了するまでループ
-        while self.cap.isOpened() and self.exit_flag:
+        while self.cap.isOpened() and self.video_playing:
             ret, frame = self.cap.read()
             if not ret:
                 break
@@ -582,7 +578,7 @@ class GUI():
             self.image_display.update()
 
             #動画の秒数に合わせて字幕を一文字づつ表示
-            if (self.video_time[1] - self.video_time[0]) * self.fps / len(self.ans_list)* 0.5 <= self.loop_num:
+            if (self.video_time[1] - self.video_time[0]) * self.fps / len(self.ans_list)* 0.65 <= self.loop_num:
                 if not len(self.ans_list) <= self.loop_len:
                     self.ans_charactor += self.ans_list[self.loop_len]
                 self.loop_num = 0
@@ -590,20 +586,19 @@ class GUI():
                 self.text2.value = self.ans_charactor
                 self.text2.update()
 
-            # 少し待つ（フレームレート調整）
+            # 少し待つ（音声と同期するためフレームレート調整）
             time.sleep((1 / 1.1) / self.fps)
 
             #再生秒数を超えると再生停止
             if time.time() - self.left_time >= self.video_time[1] - self.video_time[0]:
                 self.video_to_image()
-                pym.music.stop()
-                self.video_playing = False
 
     #再生停止
     def video_to_image(self):
-        self.exit_flag = False
+        self.video_playing = False
         self.image_display.src_base64 = self.image_file_to_base64("data/play_movie3.png")
         self.image_display.update()
+        pym.music.stop()
 
     #画像を表示させる際、base64に変換しないと表示が更新されない
     def image_file_to_base64(self, file_path):

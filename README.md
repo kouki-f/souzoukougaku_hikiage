@@ -17,7 +17,7 @@ Releasesより最新版のインストーラをダウンロードし，手順に
 -「style_bert_vits2」フォルダは，pythonのライブラリを纏めているフォルダ内に入れる． 
 
 Microsoft Store版のPythonを用いている場合，以下のディレクトリに入れれば動くと思う．  
-- C:\Users\{ユーザー名}\AppData\Local\Packages\PythonSoftwareFoundation\Python311_{ランダムな英数字列}\LocalCache\local-packages
+- C:\Users\ {ユーザー名}\AppData\Local\Packages\PythonSoftwareFoundation\Python311_{ランダムな英数字列}\LocalCache\local-packagesz
 
 
 ## 注意点など
